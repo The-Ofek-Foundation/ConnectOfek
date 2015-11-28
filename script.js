@@ -61,7 +61,7 @@ function new_game() {
   draw_board();
   
   if (ai_turn == red_turn_global)
-    setTimeout(play_ai_move, 30);
+    setTimeout(play_ai_move, 50);
 }
 
 function drawEllipse(x, y, w, h) {
@@ -187,7 +187,7 @@ function set_turn(turn, col, row) {
     }
   
   if (!over && turn === ai_turn)
-    setTimeout(play_ai_move, 30);
+    setTimeout(play_ai_move, 50);
 }
 
 function play_move(tboard, col, turn) {
