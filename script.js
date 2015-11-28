@@ -38,6 +38,9 @@ $(document).ready(function() {
     case "second":
       ai_turn = false;
       break;
+    case "both":
+      ai_turn = "both";
+      break;
     default: ai_turn = null;
   }
   
@@ -60,7 +63,7 @@ function new_game() {
   run_MCTS(board.length);
   draw_board();
   
-  if (ai_turn == red_turn_global)
+  if (ai_turn == red_turn_global || ai_turn == 'both')
     setTimeout(play_ai_move, 100);
 }
 
@@ -186,7 +189,7 @@ function set_turn(turn, col, row) {
         break;
     }
   
-  if (!over && turn === ai_turn)
+  if (!over && (turn === ai_turn || ai_turn == "both"))
     setTimeout(play_ai_move, 100);
 }
 
@@ -258,6 +261,13 @@ function MCTS_get_children(state, father) {
     children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, [col, row], MCTS_simulate, MCTS_get_children, expansion_const));
     tboard[col][row] = false;
   }
+  
+  for (var i = 0; i < children.length - 1; i++)
+    for (var a = i + 1; a < children.length; a++)
+      if (identical_boards(children[i].State.board, children[a].State.board)) {
+        children.splice(a, 1);
+        a--;
+      }
   return children;
 }
 
@@ -560,4 +570,83 @@ function game_over_full(tboard) {
       return false;
   
   return "tie";
+}
+
+function identical_boards(board1, board2) {
+  var identical = true;
+  var i, a;
+  outer1:
+  for (i = 0; i < board1.length; i++)
+    for (a = 0; a < board1[i].length; a++)
+      if (board1[i][a] != board2[i][board1[i].length - 1 - a]) {
+        identical = false;
+        break outer1;
+      }
+  if (identical)
+    return true;
+
+  identical = true;
+  outer2:
+  for (i = 0; i < board1.length; i++)
+    for (a = 0; a < board1[i].length; a++)
+      if (board1[i][a] != board2[board1.length - 1 - i][a]) {
+        identical = false;
+        break outer2;
+      }
+  if (identical)
+    return true;
+
+  identical = true;
+  outer3:
+  for (i = 0; i < board1.length; i++)
+    for (a = 0; a < board1[i].length; a++)
+      if (board1[i][a] != board2[board1.length - 1 - i][board1[i].length - 1 - a]) {
+        identical = false;
+        break outer3;
+      }
+  if (identical)
+    return true;
+
+  identical = true;
+  outer4:
+  for (i = 0; i < board1.length; i++)
+    for (a = 0; a < board1[i].length; a++)
+      if (board1[i][a] != board2[a][i]) {
+        identical = false;
+        break outer4;
+      }
+  if (identical)
+    return true;
+
+  identical = true;
+  outer5:
+  for (i = 0; i < board1.length; i++)
+    for (a = 0; a < board1[i].length; a++)
+      if (board1[i][a] != board2[a][board1.length - 1 - i]) {
+        identical = false;
+        break outer5;
+      }
+  if (identical)
+    return true;
+
+  identical = true;
+  outer6:
+  for (i = 0; i < board1.length; i++)
+    for (a = 0; a < board1[i].length; a++)
+      if (board1[i][a] != board2[board1[i].length - 1 - a][board1.length - 1 - i]) {
+        identical = false;
+        break outer6;
+      }
+  if (identical)
+    return true;
+
+  identical = true;
+  outer7:
+  for (i = 0; i < board1.length; i++)
+    for (a = 0; a < board1[i].length; a++)
+      if (board1[i][a] != board2[board1[i].length - 1 - a][i]) {
+        identical = false;
+        break outer7;
+      }
+  return identical;
 }
