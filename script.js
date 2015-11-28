@@ -61,7 +61,7 @@ function new_game() {
   draw_board();
   
   if (ai_turn == red_turn_global)
-    setTimeout(play_ai_move, 50);
+    setTimeout(play_ai_move, 100);
 }
 
 function drawEllipse(x, y, w, h) {
@@ -187,7 +187,7 @@ function set_turn(turn, col, row) {
     }
   
   if (!over && turn === ai_turn)
-    setTimeout(play_ai_move, 50);
+    setTimeout(play_ai_move, 100);
 }
 
 function play_move(tboard, col, turn) {
@@ -382,7 +382,7 @@ function game_over(tboard, x, y) {
   color = 'null';
   
   for (i = x - 3, a = y - 3; i <= x + 3; i++, a++) // diagonal 1 topleft - bottomright
-    if (a >= 0 && a < tboard.length && i >= 0 && i < tboard[a].length && countConsecutive < 4)
+    if (a >= 0 && a < tboard.length && i >= 0 && i < tboard.length && countConsecutive < 4)
       if (tboard[i][a] == color)
         countConsecutive++;
       else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
@@ -399,7 +399,7 @@ function game_over(tboard, x, y) {
   color = 'null';
   
   for (i = x - 3, a = y + 3; i <= x + 3; i++, a--) // diagonal 1 topright - bottomleft
-    if (a >= 0 && a < tboard.length && i >= 0 && i < tboard[a].length && countConsecutive < 4)
+    if (a >= 0 && a < tboard.length && i >= 0 && i < tboard.length && countConsecutive < 4)
       if (tboard[i][a] == color)
         countConsecutive++;
       else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
