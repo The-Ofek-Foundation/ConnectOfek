@@ -6,8 +6,11 @@ var red_turn_global;
 var global_ROOT;
 var expansion_const = 2;
 var ai_turn = false;
-var monte_carlo_trials = 5000;
+var monte_carlo_trials = 10000;
 var over;
+var ponder, pondering;
+var certainty_threshold = 0.15;
+var max_trials = 1500000; // prevents overload (occurs around 2.3 million)
 
 var boardui = document.getElementById("board");
 var brush = boardui.getContext("2d");
@@ -20,37 +23,42 @@ $(document).ready(function() {
   boardui.setAttribute('width', docwidth);
   boardui.setAttribute('height', docheight);
   
-  disc_width = docwidth / (dimensions[0] + 1);
-  disc_height = docheight / (dimensions[1] + 1);
-  
-  new_game();
-    
-  dimensions = eval(prompt("Enter the board dimensions:", "[7, 6]"));
-  
-  disc_width = docwidth / (dimensions[0] + 1);
-  disc_height = docheight / (dimensions[1] + 1);
-  
-  var ai_color = prompt("Enter the ai's turn:", "Second").toLowerCase();
-  switch (ai_color) {
-    case "first":
-      ai_turn = true;
-      break;
-    case "second":
-      ai_turn = false;
-      break;
-    case "both":
-      ai_turn = "both";
-      break;
-    default: ai_turn = null;
-  }
-  
-  if (ai_turn != null)
-    monte_carlo_trials = parseInt(prompt("Number of Monte Carlo Trials:", "5000"), 10);
+  $('#new-game-btn').css('top', (docheight - $('#new-game-btn').height()) / 2);
+  $('#new-game-btn').css('left', (docwidth - $('#new-game-btn').outerWidth()) / 2);
+  $('#new-game-menu').css('top', (docheight - $('#new-game-menu').outerHeight()) / 2);
+  $('#new-game-menu').css('left', (docwidth - $('#new-game-menu').outerWidth()) / 2);
   
   new_game();
 });
 
+function start_ponder() {
+  pondering = setInterval(function() {
+    if (!global_ROOT)
+      global_ROOT = create_MCTS_root();
+    if (global_ROOT.total_tries < max_trials)
+      for (var i = 0; i < monte_carlo_trials / 100; i++)
+        global_ROOT.choose_child();
+  }, 1);
+}
+
+function stop_ponder() {
+  clearInterval(pondering);
+}
+
+function adjust_buttons() {
+  $('.bottom-btn').css('font-size', disc_height / 4);
+  $('.bottom-btn').css("height", disc_height / 3);
+  $('.bottom-btn').css('bottom', disc_height / 4 - $('.bottom-btn').outerHeight(false) / 2);
+  
+  $('#new-game').css('left', (docwidth - $('#new-game').outerWidth(false)) / 2);
+}
+
 function new_game() {
+  disc_width = docwidth / (dimensions[0] + 1);
+  disc_height = docheight / (dimensions[1] + 1);
+  
+  adjust_buttons();
+  
   over = false;
   board = new Array(dimensions[0]);
   for (var i = 0; i < board.length; i++) {
@@ -60,11 +68,14 @@ function new_game() {
   }
   red_turn_global = true;
   global_ROOT = create_MCTS_root();
-  run_MCTS(board.length);
   draw_board();
   
   if (ai_turn == red_turn_global || ai_turn == 'both')
     setTimeout(play_ai_move, 100);
+  
+  stop_ponder();
+  if (ponder)
+    start_ponder();
 }
 
 function drawEllipse(x, y, w, h) {
@@ -149,13 +160,17 @@ function draw_hover(col) {
   brush.closePath();
 }
 
-function get_col(xloc) {
+function get_col(xloc, yloc) {
   if (xloc > docwidth - disc_width / 2 || xloc < disc_width / 2)
     return -1;
+  else if (yloc > docheight - disc_height / 2)
+    return -2;
   return Math.floor((xloc - disc_width / 2) / disc_width);
 }
 
 function legal_move(tboard, col, output) {
+  if (col == -2)
+    return false;
   if (col < 0) {
     if (output)
       alert("Please press on the board!");
@@ -173,6 +188,9 @@ function set_turn(turn, col, row) {
   red_turn_global = turn;
   
   global_ROOT = MCTS_get_next_root(col);
+  if (global_ROOT)
+    global_ROOT.parent = null;
+  else global_ROOT = create_MCTS_root();
   
   draw_board();
   
@@ -204,12 +222,14 @@ function play_move(tboard, col, turn) {
   return -1;
 }
 
-$(document).mousedown(function (e) {
+$('#board').mousedown(function (e) {
+  if (red_turn_global == ai_turn || ai_turn == "both")
+    return;
   if (over) {
     alert("The game is already over!");
     return;
   }
-  var col = get_col(e.pageX);
+  var col = get_col(e.pageX, e.pageY);
   if (!legal_move(board, col, true))
     return;
   var row = play_move(board, col, red_turn_global);
@@ -219,7 +239,9 @@ $(document).mousedown(function (e) {
   draw_board();
 });
 
-$(document).mousemove(function (e) {
+$('#board').mousemove(function (e) {
+  if (red_turn_global == ai_turn || ai_turn == "both")
+    return;
   var col = get_col(e.pageX);
   if (!legal_move(board, col, false))
     return;
@@ -320,21 +342,44 @@ function MCTS_get_next_root(col) {
   return null;
 }
 
-function run_MCTS(times) {
+function run_MCTS(times, threshold, callback) {
   if (!global_ROOT)
     global_ROOT = create_MCTS_root();
-  for (var i = 0; i < times; i++)
-    global_ROOT.choose_child();
+  run_MCTS_recursive(times, threshold, 5, 5, callback);
 }
 
-function most_tried_child(root) {
+function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
+  for (var a = 0; a < times / total_times; a++)
+    global_ROOT.choose_child();
+  draw_hover(most_tried_child(global_ROOT, null).last_move[0]);
+  if (threshold > 0) {
+    if (global_ROOT.children.length < 2) {
+      callback();
+      return;
+    }
+    var best_child = most_tried_child(global_ROOT, null);
+    var second_best = most_tried_child(global_ROOT, best_child);
+    console.log(second_best.total_tries / best_child.total_tries, threshold);
+    if (second_best.total_tries / best_child.total_tries < threshold) {
+      callback();
+      return;
+    }
+  }
+  if (time_on <= 1)
+    callback();
+  else setTimeout(function() {
+    run_MCTS_recursive(times, threshold, time_on - 1, total_times, callback);
+  }, 30);
+}
+
+function most_tried_child(root, exclude) {
   var most_trials = 0, child = null;
   if (!root.children)
     return null;
   if (root.children.length == 1)
     return root.children[0];
   for (var i = 0; i < root.children.length; i++)
-    if (root.children[i].total_tries > most_trials) {
+    if (root.children[i] != exclude && root.children[i].total_tries > most_trials) {
       most_trials = root.children[i].total_tries;
       child = root.children[i];
     }
@@ -349,10 +394,16 @@ function get_best_move_MCTS() {
 }
 
 function play_ai_move() {
-  run_MCTS(monte_carlo_trials);
-  var best_move = get_best_move_MCTS();
-  play_move(board, best_move[0], red_turn_global);
+  var best_move;
   
+  if (global_ROOT.total_tries < monte_carlo_trials)
+    run_MCTS(monte_carlo_trials - global_ROOT.total_tries, certainty_threshold, fpaim);
+  else fpaim();
+}
+
+function fpaim() {
+  best_move = get_best_move_MCTS();
+  play_move(board, best_move[0], red_turn_global);
   set_turn(!red_turn_global, best_move[0], best_move[1]);
 }
 
@@ -583,3 +634,54 @@ function identical_boards(board1, board2) {
         return false;
   return true;
 }
+
+function show_new_game_menu() {
+  $('#new-game-menu').animate({opacity: 0.9}, "slow").css('z-index', 1);
+}
+
+$('#new-game').click(show_new_game_menu);
+
+var dont_submit;
+
+$('#form-new-game').submit(function() {
+  if (dont_submit) {
+    dont_submit = false;
+    return false;
+  }
+  
+  dimensions[0] = parseInt($('input[name="d_width"]').val());
+  dimensions[1] = parseInt($('input[name="d_height"]').val());
+  
+  switch ($('input[name="ai-turn"]').val().toLowerCase()) {
+    case "first":
+      ai_turn = true;
+      break;
+    case "second":
+      ai_turn = false;
+      break;
+    case "both":
+      ai_turn = "both";
+      break;
+    default: ai_turn = null;
+  }
+  
+  ponder = $('input[name="ai-ponder"]').prop('checked');
+
+  monte_carlo_trials = $('input[name="mc-trials"]').val();
+  expansion_const = $('input[name="mc-expansion"]').val();
+  certainty_threshold = 1 - $('input[name="mc-certainty"]').val() / 100;
+  
+  $('#new-game-menu').animate({opacity: 0}, "slow", function() {
+    $(this).css('z-index', -1);
+    new_game();
+  });
+  
+  return false;
+});
+
+$('#btn-new-game-cancel').click(function() {
+  dont_submit = true;
+  $('#new-game-menu').animate({opacity: 0}, "slow", function() {
+    $(this).css('z-index', -1);
+  });
+});
