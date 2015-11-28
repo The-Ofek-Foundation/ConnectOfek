@@ -1,69 +1,51 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta name="description" content="Connect Four">
   <script src="https://code.jquery.com/jquery-2.1.4.js"></script>
   <script src="http://the-ofek-foundation.github.io/MCTS.js"></script>
-  <meta name="description" content="Ofek's Kalahman">
   <meta charset="utf-8">
-  <title>Ofek's Kalahman</title>
+  <title>Connect Ofek</title>
   <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
   <canvas id="board"></canvas>
-  <button class="center-btn" id="undo-btn" onclick="undo()">Undo</button>
-  <button class="center-btn" id="redo-btn" onclick="redo()">Redo</button>
-  <button class="center-btn" id="new-game-btn" onclick="show_new_game_menu()">New Game</button>
+  <button class="bottom-btn" id="new-game">New Game</button>
+  
   <div id="new-game-menu">
-  <h1 style="margin-top: 0px;">New Game</h1>
-  <form id="form-new-game" action="">
-    Number of Pits (1 - 10):
-    <input type="number" name="num-pits" min="1" max="10" step="1" value="6" required>
-    <br />
-    Seeds per Pit (1 - 12):
-    <input type="number" name="seeds-per-pit" min="1" max="12" step="1" value="4" required>
-    <br />
-    Reverse Direction? 
-    <input type="checkbox" id="reverse" name="reverse" checked>
-    <br />
-    Capture Rules:
-    <input list="capture-rules" name="capture-rules" value="Same Side and Opposite Occupied">
-    <datalist id="capture-rules">
-      <option value="No Capturing"></option>
-      <option value="Always Capturing"></option>
-      <option value="Same Side and Opposite Occupied"></option>
-      <option value="Opposite Occupied"></option>
-    </datalist>
-    <br />
-    Monte Carlo Ai? 
-    <input type="checkbox" id="ai" name="ai">
-    <br />
-    Allow Pondering? 
-    <input type="checkbox" id="ai-ponder" name="ai-ponder">
-    <br />
-    Show Monte Carlo weights? 
-    <input type="checkbox" id="mc-weight" name="mc-weight">
-    <br />
-    AI Turn:
-    <input list="ai-turn" name="ai-turn" value="Second">
-    <datalist id="ai-turn">
-      <option value="First"></option>
-      <option value="Second"></option>
-      <option value="Both"></option>
-    </datalist>
-    <br />
-    Monte Carlo Trials (10,000 - 500,000):
-    <input type="range" name="mc-trials" id="mc-trials" min="10000" max="500000" step="10000" value="200000">
-    <br />
-    Monte Carlo Expansion Constant (0 - 10):
-    <input type="range" name="mc-expansion" id="mc-expansion" min="0" max="10" step="0.1" value="3.5">
-    <br />
-    Monte Carlo Certainty Threshold (0% - 100%):
-    <input type="number" name="mc-certainty" min="0" max="100" step="1" value="50" required>
-    <br />
-    <input type="submit" value="New Game">
-    <button id="btn-new-game-cancel">Cancel</button>
-  </form>
-</div>
+    <h1 style="margin-top: 0px;">New Game</h1>
+    <form id="form-new-game" action="">
+      Board Width
+      <input type="number" name="d_width" min="1" max="20" step="1" value="7" required>
+      <br />
+      Board Height
+      <input type="number" name="d_height" min="1" max="20" step="1" value="6" required>
+      <br />
+      Allow Pondering? 
+      <input type="checkbox" id="ai-ponder" name="ai-ponder">
+      <br />
+      AI Turn:
+      <input list="ai-turn" name="ai-turn" value="Second">
+      <datalist id="ai-turn">
+        <option value="None"></option>
+        <option value="First"></option>
+        <option value="Second"></option>
+        <option value="Both"></option>
+      </datalist>
+      <br />
+      Monte Carlo Trials (500 - 50,000):
+      <input type="range" name="mc-trials" id="mc-trials" min="1000" max="50000" step="500" value="10000">
+      <br />
+      Monte Carlo Expansion Constant (0 - 10):
+      <input type="range" name="mc-expansion" id="mc-expansion" min="0" max="10" step="0.1" value="2">
+      <br />
+      Monte Carlo Certainty Threshold (0% - 100%):
+      <input type="number" name="mc-certainty" min="0" max="100" step="1" value="85" required>
+      <br />
+      <input type="submit" value="New Game">
+      <button id="btn-new-game-cancel">Cancel</button>
+    </form>
+  </div>
 </body>
 <script src="script.js"></script>
 </html>
