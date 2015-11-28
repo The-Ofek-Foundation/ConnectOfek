@@ -5,3 +5,36 @@
   width: 50px;
   height: 50px;
 }
+.bottom-btn {
+  position: absolute;
+  bottom: 0px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+.bottom-btn#new-game {
+  left: 48%;
+  background-color: blue;
+  color: white;
+}
+#new-game-menu {
+  position: absolute;
+  visibility: visible;
+  background-color: blue;
+  z-index: -1;
+  width: 80%;
+  left: auto;
+  height: auto;
+  top: auto;
+  padding: 5%;
+  color: white;
+  -moz-box-shadow: 0 0 50px black;
+  -webkit-box-shadow: 0 0 00px black;
+  box-shadow: 0 0 50px black;
+  border-radius: 15px;
+  text-align: center;
+  font-size: 30px;
+  opacity: 0;
+}
+input {
+  font-size: 20px;
+}
