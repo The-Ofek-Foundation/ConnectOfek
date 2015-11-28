@@ -245,6 +245,9 @@ function MCTS_get_children(state, father) {
   var tboard = state.board;
   var children = [];
   
+  if (game_over_full(tboard))
+    return [];
+  
   var win = get_winning_move(tboard, state.turn);
   if (!win)
     win = get_winning_move(tboard, !state.turn);
@@ -574,7 +577,7 @@ function game_over_full(tboard) {
 }
 
 function identical_boards(board1, board2) {
-  for (var i = 0; i < board1.length; i++)
+  for (var i = 0; i < board1.length / 2; i++)
     for (var a = 0; a < board1[i].length; a++)
       if (board1[i][a] != board2[board1.length - 1 - i][a])
         return false;
