@@ -122,12 +122,13 @@ function draw_piece(x, y) {
 
 function draw_board() {
   clear_board();
-  draw_grid();
   
   for (var i = 0; i < board.length; i++)
     for (var a = 0; a < board[i].length; a++)
       if (board[i][a])
         draw_piece(i, a);
+  
+  draw_grid();
 }
 
 function draw_hover(col) {
@@ -573,80 +574,9 @@ function game_over_full(tboard) {
 }
 
 function identical_boards(board1, board2) {
-  var identical = true;
-  var i, a;
-  outer1:
-  for (i = 0; i < board1.length; i++)
-    for (a = 0; a < board1[i].length; a++)
-      if (board1[i][a] != board2[i][board1[i].length - 1 - a]) {
-        identical = false;
-        break outer1;
-      }
-  if (identical)
-    return true;
-
-  identical = true;
-  outer2:
-  for (i = 0; i < board1.length; i++)
-    for (a = 0; a < board1[i].length; a++)
-      if (board1[i][a] != board2[board1.length - 1 - i][a]) {
-        identical = false;
-        break outer2;
-      }
-  if (identical)
-    return true;
-
-  identical = true;
-  outer3:
-  for (i = 0; i < board1.length; i++)
-    for (a = 0; a < board1[i].length; a++)
-      if (board1[i][a] != board2[board1.length - 1 - i][board1[i].length - 1 - a]) {
-        identical = false;
-        break outer3;
-      }
-  if (identical)
-    return true;
-
-  identical = true;
-  outer4:
-  for (i = 0; i < board1.length; i++)
-    for (a = 0; a < board1[i].length; a++)
-      if (board1[i][a] != board2[a][i]) {
-        identical = false;
-        break outer4;
-      }
-  if (identical)
-    return true;
-
-  identical = true;
-  outer5:
-  for (i = 0; i < board1.length; i++)
-    for (a = 0; a < board1[i].length; a++)
-      if (board1[i][a] != board2[a][board1.length - 1 - i]) {
-        identical = false;
-        break outer5;
-      }
-  if (identical)
-    return true;
-
-  identical = true;
-  outer6:
-  for (i = 0; i < board1.length; i++)
-    for (a = 0; a < board1[i].length; a++)
-      if (board1[i][a] != board2[board1[i].length - 1 - a][board1.length - 1 - i]) {
-        identical = false;
-        break outer6;
-      }
-  if (identical)
-    return true;
-
-  identical = true;
-  outer7:
-  for (i = 0; i < board1.length; i++)
-    for (a = 0; a < board1[i].length; a++)
-      if (board1[i][a] != board2[board1[i].length - 1 - a][i]) {
-        identical = false;
-        break outer7;
-      }
-  return identical;
+  for (var i = 0; i < board1.length; i++)
+    for (var a = 0; a < board1[i].length; a++)
+      if (board1[i][a] != board2[board1.length - 1 - i][a])
+        return false;
+  return true;
 }
