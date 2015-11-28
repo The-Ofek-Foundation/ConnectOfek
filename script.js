@@ -192,7 +192,9 @@ function set_turn(turn, col, row) {
     global_ROOT.parent = null;
   else global_ROOT = create_MCTS_root();
   
-  draw_board();
+  if (!over && (turn === ai_turn || ai_turn == "both") && most_tried_child(global_ROOT, null))
+    draw_hover(most_tried_child(global_ROOT, null).last_move[0]);
+  else  draw_board();
   
   over = game_over(board, col, row);
   if (over)
