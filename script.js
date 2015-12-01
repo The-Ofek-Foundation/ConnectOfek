@@ -52,6 +52,7 @@ function adjust_buttons() {
   $('.bottom-btn').css('bottom', disc_height / 4 - $('.bottom-btn').outerHeight(false) / 2);
   
   $('#new-game').css('left', (docwidth - $('#new-game').outerWidth(false)) / 2);
+  $('#back').css('left', (docwidth - $('#new-game').outerWidth(false)) / 4);
 }
 
 function new_game(pos) {
@@ -718,4 +719,13 @@ $('#btn-new-game-cancel').click(function() {
   $('#new-game-menu').animate({opacity: 0}, "slow", function() {
     $(this).css('z-index', -1);
   });
+});
+
+$('#back').click(function() {
+  var pos;
+  if (ai_turn === true || ai_turn === false)
+    pos = position.substring(0, position.length - 2);
+  else pos = position.substring(0, position.length - 1);
+  window.location.hash = pos;
+  new_game(pos);
 });
