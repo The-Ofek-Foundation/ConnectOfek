@@ -11,7 +11,7 @@ var over;
 var ponder, pondering;
 var certainty_threshold = 0.15;
 var max_trials = 1500000; // prevents overload (occurs around 2.3 million)
-var position;
+var position, cookie_id;
 
 var boardui = document.getElementById("board");
 var brush = boardui.getContext("2d");
@@ -52,8 +52,17 @@ function adjust_buttons() {
   $('.footer').css('margin-bottom', disc_height / 4 - $('#back').outerHeight(false));
 }
 
-function new_game(pos) {
-  position = pos.replace(/#/g, '');
+function new_game(c_id) {
+  c_id = c_id.replace(/#/g, "");
+  var cookie = getCookie(c_id);
+  if (cookie && cookie.length > 0) {
+    cookie_id = c_id;
+    new_game_cookie(cookie);
+    return;
+  }
+  cookie_id = new_cookie_id();
+  window.location.hash = cookie_id;
+  
   disc_width = docwidth / (dimensions[0] + 1);
   disc_height = docheight / (dimensions[1] + 1);
   
@@ -66,12 +75,13 @@ function new_game(pos) {
     for (var a = 0; a < board[i].length; a++)
       board[i][a] = false;
   }
+  
   red_turn_global = true;
-  if (!setup_position(position)) {
-    alert("Invalid Position: " + position);
-    new_game("");
-    return;
-  }
+  
+  position = "";
+  
+  save_settings_cookie(cookie_id);
+  
   global_ROOT = create_MCTS_root();
   draw_board();
   
@@ -81,6 +91,76 @@ function new_game(pos) {
   stop_ponder();
   if (ponder)
     start_ponder();
+}
+
+function new_game_cookie(cookie) {
+  load_settings_cookie(cookie);
+  
+  disc_width = docwidth / (dimensions[0] + 1);
+  disc_height = docheight / (dimensions[1] + 1);
+  adjust_buttons();
+  
+  board = new Array(dimensions[0]);
+  for (var i = 0; i < board.length; i++) {
+    board[i] = new Array(dimensions[1]);
+    for (var a = 0; a < board[i].length; a++)
+      board[i][a] = false;
+  }
+  red_turn_global = true;
+  
+  setup_position(position);
+    
+  global_ROOT = create_MCTS_root();
+  draw_board();
+  
+  if (ai_turn == red_turn_global || ai_turn == 'both')
+    setTimeout(play_ai_move, 100);
+  
+  stop_ponder();
+  if (ponder)
+    start_ponder();
+}
+
+function new_cookie_id() {
+  var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  
+  do {
+    cookie_id = "";
+    for( var i=0; i < 5; i++)
+        cookie_id += possible.charAt(Math.floor(Math.random() * possible.length));
+  } while (getCookie(cookie_id));
+  
+  return cookie_id;
+}
+
+function save_settings_cookie(c_id) {
+  var settings = {};
+  
+  settings.over = over;
+  settings.ponder = ponder;
+  settings.ai_turn = ai_turn;
+  settings.position = position;
+  settings.dimensions = dimensions;
+  settings.expansion_const = expansion_const;
+  settings.red_turn_global = red_turn_global;
+  settings.monte_carlo_trials = monte_carlo_trials;
+  settings.certainty_threshold = certainty_threshold;
+  
+  
+  setCookie(c_id, JSON.stringify(settings), 10);
+}
+
+function load_settings_cookie(cookie) {
+  var settings = JSON.parse(cookie);
+  
+  over = settings.over;
+  ponder = settings.ponder;
+  ai_turn = settings.ai_turn;
+  position = settings.position;
+  dimensions = settings.dimensions;
+  expansion_const = settings.expansion_const;
+  monte_carlo_trials = settings.monte_carlo_trials;
+  certainty_threshold = settings.certainty_threshold;
 }
 
 function setup_position(pos) {
@@ -211,7 +291,6 @@ function legal_move(tboard, col, output) {
 function set_turn(turn, col, row) {
   
   position += col + 1;
-  window.location.hash = position;
   
   red_turn_global = turn;
   
@@ -227,6 +306,9 @@ function set_turn(turn, col, row) {
   else  draw_board();
   
   over = game_over(board, col, row);
+  
+  save_settings_cookie(cookie_id);
+  
   if (over)
     switch (over) {
       case "tie":
@@ -393,7 +475,6 @@ function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
     }
     var best_child = most_tried_child(global_ROOT, null);
     var second_best = most_tried_child(global_ROOT, best_child);
-    console.log(second_best.total_tries / best_child.total_tries, threshold);
     if (second_best.total_tries / best_child.total_tries < threshold) {
       callback();
       return;
@@ -707,7 +788,7 @@ $('#form-new-game').submit(function() {
   
   $('#new-game-menu').animate({opacity: 0}, "slow", function() {
     $(this).css('z-index', -1);
-    new_game($('input[name="pos"]').val());
+    new_game("");
   });
   
   return false;
@@ -721,10 +802,29 @@ $('#btn-new-game-cancel').click(function() {
 });
 
 $('#back').click(function() {
-  var pos;
   if (ai_turn === true || ai_turn === false)
-    pos = position.substring(0, position.length - 2);
-  else pos = position.substring(0, position.length - 1);
-  window.location.hash = pos;
-  new_game(pos);
+    position = position.substring(0, position.length - 2);
+  else position = position.substring(0, position.length - 1);
+  
+  save_settings_cookie(cookie_id);
+  
+  new_game(cookie_id);
 });
+
+function setCookie(cname, cvalue, exdays) {
+    var d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    var expires = "expires="+d.toUTCString();
+    document.cookie = cname + "=" + cvalue + "; " + expires;
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var ca = document.cookie.split(';');
+    for(var i=0; i<ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0)==' ') c = c.substring(1);
+        if (c.indexOf(name) === 0) return c.substring(name.length, c.length);
+    }
+    return "";
+}
