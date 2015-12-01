@@ -47,12 +47,11 @@ function stop_ponder() {
 }
 
 function adjust_buttons() {
-  $('.bottom-btn').css('font-size', disc_height / 4);
-  $('.bottom-btn').css("height", disc_height / 3);
-  $('.bottom-btn').css('bottom', disc_height / 4 - $('.bottom-btn').outerHeight(false) / 2);
-  
-  $('#new-game').css('left', (docwidth - $('#new-game').outerWidth(false)) / 2);
-  $('#back').css('left', (docwidth - $('#new-game').outerWidth(false)) / 4);
+  $('.footer button').css('font-size', disc_height / 4);
+  $('.footer').css("height", disc_height / 2);
+  $('.footer').css('margin-bottom', disc_height / 4 - $('#back').outerHeight(false));
+//   $('.footer').css("line-height", disc_height / 2);
+//   $('.footer button').css("bottom", disc_height/ 2);
 }
 
 function new_game(pos) {
@@ -258,6 +257,8 @@ function play_move(tboard, col, turn) {
 }
 
 $('#board').mousedown(function (e) {
+  if (e.which === 3)
+    return;
   if (red_turn_global == ai_turn || ai_turn == "both")
     return;
   if (over) {
