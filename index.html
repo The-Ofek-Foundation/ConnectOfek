@@ -7,14 +7,12 @@
   <script src="https://apis.google.com/js/platform.js" async defer></script>
   <meta charset="utf-8">
   <title>Connect Ofek</title>
-  <link rel="stylesheet" type="text/css" href="styles.css">
   <link rel="shortcut icon" href="https://drive.google.com/file/d/0B4xepgi524XzVENYN25XMEhmSm8/view?usp=sharing" type="image/x-icon" /> 
   <link rel="icon" href="https://drive.google.com/file/d/0B4xepgi524XzVENYN25XMEhmSm8/view?usp=sharing" type="image/gif" />
+  <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
-  <div class="wrapper">
-    <canvas id="board"></canvas>
-  </div>
+  <canvas id="board"></canvas>
   <div class="footer">
     <button id="back">Back</button>
     <button id="new-game">New Game</button>
@@ -51,9 +49,6 @@
       <br />
       Monte Carlo Certainty Threshold (0% - 100%):
       <input type="number" name="mc-certainty" min="0" max="100" step="1" value="85" required>
-      <br />
-      Position # (Can be found after hashtag in url):
-      <input type="text" name="pos" val="">
       <br />
       <input type="submit" value="New Game">
       <button id="btn-new-game-cancel">Cancel</button>
