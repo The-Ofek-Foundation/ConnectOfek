@@ -16,6 +16,11 @@
   background-color: blue;
   color: white;
 }
+.bottom-btn#back {
+  left: 24%;
+  background-color: red;
+  color: white;
+}
 #new-game-menu {
   position: absolute;
   visibility: visible;
