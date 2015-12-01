@@ -50,8 +50,6 @@ function adjust_buttons() {
   $('.footer button').css('font-size', disc_height / 4);
   $('.footer').css("height", disc_height / 2);
   $('.footer').css('margin-bottom', disc_height / 4 - $('#back').outerHeight(false));
-//   $('.footer').css("line-height", disc_height / 2);
-//   $('.footer button').css("bottom", disc_height/ 2);
 }
 
 function new_game(pos) {
@@ -672,7 +670,7 @@ function identical_boards(board1, board2) {
 }
 
 function show_new_game_menu() {
-  $('#new-game-menu').animate({opacity: 0.9}, "slow").css('z-index', 1);
+  $('#new-game-menu').animate({opacity: 0.9}, "slow").css('z-index', 100);
 }
 
 $('#new-game').click(show_new_game_menu);
