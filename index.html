@@ -4,14 +4,21 @@
   <meta name="description" content="Connect Four online Monte Carlo AI">
   <script src="https://code.jquery.com/jquery-2.1.4.js"></script>
   <script src="http://the-ofek-foundation.github.io/MCTS.js"></script>
+  <script src="https://apis.google.com/js/platform.js" async defer></script>
   <meta charset="utf-8">
   <title>Connect Ofek</title>
   <link rel="stylesheet" type="text/css" href="styles.css">
 </head>
 <body>
-  <canvas id="board"></canvas>
-  <button class="bottom-btn" id="new-game">New Game</button>
-  <button class="bottom-btn" id="back">Back</button>
+  <div class="wrapper">
+    <canvas id="board"></canvas>
+  </div>
+  <div class="footer">
+    <button id="back">Back</button>
+    <button id="new-game">New Game</button>
+    <g:plusone size="standard" href="http://the-ofek-foundation.github.io/ConnectOfek/" data-align="right" data-annotation="inline"></g:plusone>
+  </div>
+  
   
   <div id="new-game-menu">
     <h1 style="margin-top: 0px;">New Game</h1>
