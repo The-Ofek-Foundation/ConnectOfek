@@ -1,3 +1,10 @@
+* {
+  margin: 0;
+}
+html,
+body {
+  height: 100%;
+}
 #board {
   position: absolute;
   top: 0px;
@@ -5,21 +12,25 @@
   width: 50px;
   height: 50px;
 }
-.bottom-btn {
-  position: absolute;
+.footer {
+  position: fixed;
+  display: inline;
   bottom: 0px;
-  border-radius: 5px;
   font-weight: bold;
+  width: 100%;
+  text-align: center;
+  z-index: 5;
 }
-.bottom-btn#new-game {
-  left: 48%;
+.footer button {
+  color: white;
+  border-radius: 5px;
+  margin: auto 30px;
+}
+.footer button#new-game {
   background-color: blue;
-  color: white;
 }
-.bottom-btn#back {
-  left: 24%;
+.footer button#back {
   background-color: red;
-  color: white;
 }
 #new-game-menu {
   position: absolute;
