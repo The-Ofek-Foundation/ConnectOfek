@@ -11,6 +11,7 @@ var over;
 var ponder, pondering;
 var certainty_threshold = 0.15;
 var max_trials = 1500000; // prevents overload (occurs around 2.3 million)
+var position;
 
 var boardui = document.getElementById("board");
 var brush = boardui.getContext("2d");
@@ -28,7 +29,7 @@ $(document).ready(function() {
   $('#new-game-menu').css('top', (docheight - $('#new-game-menu').outerHeight()) / 2);
   $('#new-game-menu').css('left', (docwidth - $('#new-game-menu').outerWidth()) / 2);
   
-  new_game();
+  new_game(window.location.hash);
 });
 
 function start_ponder() {
@@ -53,7 +54,8 @@ function adjust_buttons() {
   $('#new-game').css('left', (docwidth - $('#new-game').outerWidth(false)) / 2);
 }
 
-function new_game() {
+function new_game(pos) {
+  position = pos.replace(/#/g, '');
   disc_width = docwidth / (dimensions[0] + 1);
   disc_height = docheight / (dimensions[1] + 1);
   
@@ -67,6 +69,11 @@ function new_game() {
       board[i][a] = false;
   }
   red_turn_global = true;
+  if (!setup_position(position)) {
+    alert("Invalid Position: " + position);
+    new_game("");
+    return;
+  }
   global_ROOT = create_MCTS_root();
   draw_board();
   
@@ -76,6 +83,25 @@ function new_game() {
   stop_ponder();
   if (ponder)
     start_ponder();
+}
+
+function setup_position(pos) {
+  if (!pos || pos.length === 0) {
+    position = "";
+    return true;
+  }
+  
+  for (var i = 0; i < pos.length; i++) {
+    var col = parseInt(pos.charAt(i), 10) - 1;
+    if (legal_move(board, col, false)) {
+      play_move(board, col, red_turn_global);
+      red_turn_global = !red_turn_global;
+      if (ai_turn === true || ai_turn === false)
+        ai_turn = !ai_turn;
+    }
+    else return false;
+  }
+  return true;
 }
 
 function drawEllipse(x, y, w, h) {
@@ -185,6 +211,10 @@ function legal_move(tboard, col, output) {
 }
 
 function set_turn(turn, col, row) {
+  
+  position += col + 1;
+  window.location.hash = position;
+  
   red_turn_global = turn;
   
   global_ROOT = MCTS_get_next_root(col);
@@ -192,8 +222,10 @@ function set_turn(turn, col, row) {
     global_ROOT.parent = null;
   else global_ROOT = create_MCTS_root();
   
-  if (!over && (turn === ai_turn || ai_turn == "both") && most_tried_child(global_ROOT, null))
-    draw_hover(most_tried_child(global_ROOT, null).last_move[0]);
+  var mtc = most_tried_child(global_ROOT, null);
+  
+  if (!over && (turn === ai_turn || ai_turn == "both") && mtc && mtc.length > 0)
+    draw_hover(mtc.last_move[0]);
   else  draw_board();
   
   over = game_over(board, col, row);
@@ -305,19 +337,19 @@ function MCTS_simulate(state) {
   var last_move, turn = state.turn, done = game_over_full(tboard);
   var row, col;
   while (!done) {
-    last_move = get_winning_move(tboard, turn);
-    if (!last_move)
-      last_move = get_winning_move(tboard, !turn);
-    if (!last_move)
+//     last_move = get_winning_move(tboard, turn);
+//     if (!last_move)
+//       last_move = get_winning_move(tboard, !turn);
+//     if (!last_move)
       do {
         col = Math.floor(Math.random() * tboard.length);
         row = play_move(tboard, col, turn);
       }  while (row < 0);
-    else {
-      tboard[last_move[0]][last_move[1]] = turn ? "R":"Y";
-      col = last_move[0];
-      row = last_move[1];
-    }
+//     else {
+//       tboard[last_move[0]][last_move[1]] = turn ? "R":"Y";
+//       col = last_move[0];
+//       row = last_move[1];
+//     }
     done = game_over(tboard, col, row);
     turn = !turn;
   }
@@ -675,7 +707,7 @@ $('#form-new-game').submit(function() {
   
   $('#new-game-menu').animate({opacity: 0}, "slow", function() {
     $(this).css('z-index', -1);
-    new_game();
+    new_game($('input[name="pos"]').val());
   });
   
   return false;
