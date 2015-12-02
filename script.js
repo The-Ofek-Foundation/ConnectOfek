@@ -303,7 +303,6 @@ function set_turn(turn, col, row) {
   else global_ROOT = create_MCTS_root();
   
   var mtc = most_tried_child(global_ROOT, null);
-  console.log(mtc);
   
   if (!over && (turn === ai_turn || ai_turn == "both") && mtc && mtc.last_move)
     draw_hover(mtc.last_move[0]);
