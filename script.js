@@ -6,7 +6,7 @@ var red_turn_global;
 var global_ROOT;
 var expansion_const = 2;
 var ai_turn = false;
-var monte_carlo_trials = 10000;
+var monte_carlo_trials = 5000;
 var over;
 var ponder, pondering;
 var certainty_threshold = 0.15;
@@ -841,7 +841,7 @@ $('#form-new-game').submit(function() {
       smart_simulation = true;
       monte_carlo_trials = 1000;
       expansion_const = 10;
-      certainty_threshold = 0.5;
+      certainty_threshold = 0.4;
       ponder = true;
       break;
     case "hard":
