@@ -58,6 +58,7 @@ function adjust_buttons() {
 
 function new_game(c_id) {
   cookie_id = c_id.replace(/#/g, "");
+
   var cookie = getCookie(cookie_id);
   if (cookie && cookie.length > 0) {
     new_game_cookie(cookie);
@@ -129,14 +130,15 @@ function new_game_cookie(cookie) {
 
 function new_cookie_id() {
   var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  var c_id;
   
   do {
-    cookie_id = "";
+    c_id = "";
     for( var i=0; i < 5; i++)
-        cookie_id += possible.charAt(Math.floor(Math.random() * possible.length));
-  } while (getCookie(cookie_id));
+        c_id += possible.charAt(Math.floor(Math.random() * possible.length));
+  } while (getCookie(c_id));
   
-  return cookie_id;
+  return c_id;
 }
 
 function save_settings_cookie(c_id) {
@@ -148,10 +150,9 @@ function save_settings_cookie(c_id) {
   settings.position = position;
   settings.dimensions = dimensions;
   settings.expansion_const = expansion_const;
-  settings.red_turn_global = red_turn_global;
+  settings.smart_simulation = smart_simulation;
   settings.monte_carlo_trials = monte_carlo_trials;
   settings.certainty_threshold = certainty_threshold;
-  
   
   setCookie(c_id, JSON.stringify(settings), 10);
 }
@@ -165,6 +166,7 @@ function load_settings_cookie(cookie) {
   position = settings.position;
   dimensions = settings.dimensions;
   expansion_const = settings.expansion_const;
+  smart_simulation = settings.smart_simulation;
   monte_carlo_trials = settings.monte_carlo_trials;
   certainty_threshold = settings.certainty_threshold;
 }
@@ -535,7 +537,7 @@ function get_best_move_MCTS() {
 function play_ai_move() {
   ai_stopped = false;
   
-  if (global_ROOT.total_tries < monte_carlo_trials)
+  if (global_ROOT.total_tries < monte_carlo_trials && certainty_threshold < 1)
     run_MCTS(monte_carlo_trials - global_ROOT.total_tries, certainty_threshold, fpaim);
   else fpaim();
 }
@@ -804,11 +806,70 @@ $('#form-new-game').submit(function() {
     default: ai_turn = null;
   }
   
-  ponder = $('input[name="ai-ponder"]').prop('checked');
-
-  monte_carlo_trials = $('input[name="mc-trials"]').val();
-  expansion_const = $('input[name="mc-expansion"]').val();
-  certainty_threshold = 1 - $('input[name="mc-certainty"]').val() / 100;
+  var allow_ponder = $('input[name="allow-ponder"]').prop('checked');
+  
+  switch ($('input[name="ai-diff"]').val().toLowerCase()) {
+    case "custom":
+      smart_simulation = $('input[name="smart-simulation"]').prop('checked');
+      monte_carlo_trials = $('input[name="mc-trials"]').val();
+      expansion_const = $('input[name="mc-expansion"]').val();
+      certainty_threshold = (1 - $('input[name="mc-certainty"]').val() / 100).toFixed(2);
+      ponder =  $('input[name="ai-ponder"]').prop('checked');
+      break;
+    case "stupid":
+      smart_simulation = false;
+      monte_carlo_trials = 10;
+      expansion_const = 10;
+      certainty_threshold = 0;
+      ponder = false;
+      break;
+    case "ehh":
+      smart_simulation = true;
+      monte_carlo_trials = 50;
+      expansion_const = 2;
+      certainty_threshold = 0;
+      ponder = false;
+      break;
+    case "play fast":
+      smart_simulation = false;
+      monte_carlo_trials = dimensions[0] * 10;
+      expansion_const = 2;
+      certainty_threshold = 1;
+      ponder = true;
+      break;
+    case "normal":
+      smart_simulation = true;
+      monte_carlo_trials = 1000;
+      expansion_const = 10;
+      certainty_threshold = 0.5;
+      ponder = true;
+      break;
+    case "hard":
+      smart_simulation = true;
+      monte_carlo_trials = 5000;
+      expansion_const = 2;
+      certainty_threshold = 0.25;
+      ponder = true;
+      break;
+    case "very hard":
+      smart_simulation = true;
+      monte_carlo_trials = 10000;
+      expansion_const = 2;
+      certainty_threshold = 0.15;
+      ponder = true;
+      break;
+    case "good luck":
+      smart_simulation = true;
+      monte_carlo_trials = 50000;
+      expansion_const = 2;
+      certainty_threshold = 0.1;
+      ponder = true;
+      break;
+  }
+  
+  if (!allow_ponder)
+    ponder = false;
+  
   var name = $('input[name="name"]').val();
   $('input[name="name"]').val(new_cookie_id());
   
