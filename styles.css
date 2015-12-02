@@ -32,6 +32,12 @@ body {
 .footer button#back {
   background-color: red;
 }
+.footer button#stop-ai {
+  background-color: purple;
+}
+.footer button#start-ai {
+  background-color: green;
+}
 #new-game-menu {
   position: absolute;
   visibility: visible;
