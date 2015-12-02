@@ -12,6 +12,7 @@ var ponder, pondering;
 var certainty_threshold = 0.15;
 var max_trials = 1500000; // prevents overload (occurs around 2.3 million)
 var position, cookie_id;
+var ai_stopped = false;
 
 var boardui = document.getElementById("board");
 var brush = boardui.getContext("2d");
@@ -53,14 +54,16 @@ function adjust_buttons() {
 }
 
 function new_game(c_id) {
-  c_id = c_id.replace(/#/g, "");
-  var cookie = getCookie(c_id);
+  cookie_id = c_id.replace(/#/g, "");
+  var cookie = getCookie(cookie_id);
   if (cookie && cookie.length > 0) {
-    cookie_id = c_id;
     new_game_cookie(cookie);
     return;
   }
-  cookie_id = new_cookie_id();
+  
+  if (cookie_id.length === 0)
+    cookie_id = new_cookie_id();
+  
   window.location.hash = cookie_id;
   
   disc_width = docwidth / (dimensions[0] + 1);
@@ -86,7 +89,7 @@ function new_game(c_id) {
   draw_board();
   
   if (ai_turn == red_turn_global || ai_turn == 'both')
-    setTimeout(play_ai_move, 100);
+    setTimeout(play_ai_move, 50);
   
   stop_ponder();
   if (ponder)
@@ -300,8 +303,9 @@ function set_turn(turn, col, row) {
   else global_ROOT = create_MCTS_root();
   
   var mtc = most_tried_child(global_ROOT, null);
+  console.log(mtc);
   
-  if (!over && (turn === ai_turn || ai_turn == "both") && mtc && mtc.length > 0)
+  if (!over && (turn === ai_turn || ai_turn == "both") && mtc && mtc.last_move)
     draw_hover(mtc.last_move[0]);
   else  draw_board();
   
@@ -323,7 +327,7 @@ function set_turn(turn, col, row) {
     }
   
   if (!over && (turn === ai_turn || ai_turn == "both"))
-    setTimeout(play_ai_move, 100);
+    setTimeout(play_ai_move, 50);
 }
 
 function play_move(tboard, col, turn) {
@@ -351,8 +355,6 @@ $('#board').mousedown(function (e) {
   var row = play_move(board, col, red_turn_global);
   
   set_turn(!red_turn_global, col, row);
-  
-  draw_board();
 });
 
 $('#board').mousemove(function (e) {
@@ -480,7 +482,7 @@ function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
       return;
     }
   }
-  if (time_on <= 1)
+  if (time_on <= 1 || ai_stopped)
     callback();
   else setTimeout(function() {
     run_MCTS_recursive(times, threshold, time_on - 1, total_times, callback);
@@ -509,7 +511,7 @@ function get_best_move_MCTS() {
 }
 
 function play_ai_move() {
-  var best_move;
+  ai_stopped = false;
   
   if (global_ROOT.total_tries < monte_carlo_trials)
     run_MCTS(monte_carlo_trials - global_ROOT.total_tries, certainty_threshold, fpaim);
@@ -517,7 +519,7 @@ function play_ai_move() {
 }
 
 function fpaim() {
-  best_move = get_best_move_MCTS();
+  var best_move = get_best_move_MCTS();
   play_move(board, best_move[0], red_turn_global);
   set_turn(!red_turn_global, best_move[0], best_move[1]);
 }
@@ -785,10 +787,12 @@ $('#form-new-game').submit(function() {
   monte_carlo_trials = $('input[name="mc-trials"]').val();
   expansion_const = $('input[name="mc-expansion"]').val();
   certainty_threshold = 1 - $('input[name="mc-certainty"]').val() / 100;
+  var name = $('input[name="name"]').val();
+  $('input[name="name"]').val("");
   
   $('#new-game-menu').animate({opacity: 0}, "slow", function() {
     $(this).css('z-index', -1);
-    new_game("");
+    new_game(name);
   });
   
   return false;
@@ -805,10 +809,24 @@ $('#back').click(function() {
   if (ai_turn === true || ai_turn === false)
     position = position.substring(0, position.length - 2);
   else position = position.substring(0, position.length - 1);
+  over = false;
   
   save_settings_cookie(cookie_id);
   
   new_game(cookie_id);
+});
+
+$('#stop-ai').click(function() {
+  ai_stopped = true;
+  ai_turn = "None";
+});
+
+$('#start-ai').click(function() {
+  if (ai_turn == red_turn_global || ai_turn == "Both")
+    return;
+  ai_turn = red_turn_global;
+  
+  play_ai_move();
 });
 
 function setCookie(cname, cvalue, exdays) {
