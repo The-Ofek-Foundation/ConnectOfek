@@ -13,6 +13,7 @@ var certainty_threshold = 0.15;
 var max_trials = 1500000; // prevents overload (occurs around 2.3 million)
 var position, cookie_id;
 var ai_stopped = false;
+var smart_simulation = true;
 
 var boardui = document.getElementById("board");
 var brush = boardui.getContext("2d");
@@ -31,6 +32,8 @@ $(document).ready(function() {
   $('#new-game-menu').css('left', (docwidth - $('#new-game-menu').outerWidth()) / 2);
   
   new_game(window.location.hash);
+  
+  $('input[name="name"]').val(new_cookie_id());
 });
 
 function start_ponder() {
@@ -177,8 +180,6 @@ function setup_position(pos) {
     if (legal_move(board, col, false)) {
       play_move(board, col, red_turn_global);
       red_turn_global = !red_turn_global;
-      if (ai_turn === true || ai_turn === false)
-        ai_turn = !ai_turn;
     }
     else return false;
   }
@@ -392,7 +393,7 @@ function MCTS_get_children(state, father) {
     win = get_winning_move(tboard, !state.turn);
   if (win) {
     tboard[win[0]][win[1]] = state.turn ? "R":"Y";
-    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, win, MCTS_simulate, MCTS_get_children, expansion_const));
+    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, win, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
     tboard[win[0]][win[1]] = false;
     return children;
   }
@@ -401,7 +402,7 @@ function MCTS_get_children(state, father) {
     row = play_move(tboard, col, state.turn);
     if (row < 0)
       continue;
-    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, [col, row], MCTS_simulate, MCTS_get_children, expansion_const));
+    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, [col, row], smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
     tboard[col][row] = false;
   }
   
@@ -420,19 +421,41 @@ function MCTS_simulate(state) {
   var last_move, turn = state.turn, done = game_over_full(tboard);
   var row, col;
   while (!done) {
-//     last_move = get_winning_move(tboard, turn);
-//     if (!last_move)
-//       last_move = get_winning_move(tboard, !turn);
-//     if (!last_move)
       do {
         col = Math.floor(Math.random() * tboard.length);
         row = play_move(tboard, col, turn);
       }  while (row < 0);
-//     else {
-//       tboard[last_move[0]][last_move[1]] = turn ? "R":"Y";
-//       col = last_move[0];
-//       row = last_move[1];
-//     }
+    done = game_over(tboard, col, row);
+    turn = !turn;
+  }
+  
+  switch (done) {
+    case "tie":
+      return 0;
+    default:
+      return done == (state.turn ? "R":"Y") ? 1:-1;
+  }
+}
+
+function MCTS_simulate_smart(state) {
+  var tboard = $.extend(true, [], state.board);
+  
+  var last_move, turn = state.turn, done = game_over_full(tboard);
+  var row, col;
+  while (!done) {
+    last_move = get_winning_move(tboard, turn);
+    if (!last_move)
+      last_move = get_winning_move(tboard, !turn);
+    if (!last_move)
+      do {
+        col = Math.floor(Math.random() * tboard.length);
+        row = play_move(tboard, col, turn);
+      }  while (row < 0);
+    else {
+      tboard[last_move[0]][last_move[1]] = turn ? "R":"Y";
+      col = last_move[0];
+      row = last_move[1];
+    }
     done = game_over(tboard, col, row);
     turn = !turn;
   }
@@ -446,7 +469,7 @@ function MCTS_simulate(state) {
 }
 
 function create_MCTS_root() {
-  return new MCTS_Node(new State(board, red_turn_global), null, null, MCTS_simulate, MCTS_get_children, expansion_const);
+  return new MCTS_Node(new State(board, red_turn_global), null, null, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const);
 }
 
 function MCTS_get_next_root(col) {
@@ -787,7 +810,7 @@ $('#form-new-game').submit(function() {
   expansion_const = $('input[name="mc-expansion"]').val();
   certainty_threshold = 1 - $('input[name="mc-certainty"]').val() / 100;
   var name = $('input[name="name"]').val();
-  $('input[name="name"]').val("");
+  $('input[name="name"]').val(new_cookie_id());
   
   $('#new-game-menu').animate({opacity: 0}, "slow", function() {
     $(this).css('z-index', -1);
