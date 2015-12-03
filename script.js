@@ -537,7 +537,7 @@ function get_best_move_MCTS() {
 function play_ai_move() {
   ai_stopped = false;
   
-  if (global_ROOT.total_tries < monte_carlo_trials && certainty_threshold < 1)
+  if (global_ROOT.total_tries < monte_carlo_trials && (certainty_threshold < 1 || position.length === 0))
     run_MCTS(monte_carlo_trials - global_ROOT.total_tries, certainty_threshold, fpaim);
   else fpaim();
 }
