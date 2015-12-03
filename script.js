@@ -80,7 +80,7 @@ function new_game(c_id) {
   for (var i = 0; i < board.length; i++) {
     board[i] = new Array(dimensions[1]);
     for (var a = 0; a < board[i].length; a++)
-      board[i][a] = false;
+      board[i][a] = ' ';
   }
   
   red_turn_global = true;
@@ -111,7 +111,7 @@ function new_game_cookie(cookie) {
   for (var i = 0; i < board.length; i++) {
     board[i] = new Array(dimensions[1]);
     for (var a = 0; a < board[i].length; a++)
-      board[i][a] = false;
+      board[i][a] = ' ';
   }
   red_turn_global = true;
   
@@ -246,14 +246,14 @@ function draw_board() {
   
   for (var i = 0; i < board.length; i++)
     for (var a = 0; a < board[i].length; a++)
-      if (board[i][a])
+      if (board[i][a] != ' ')
         draw_piece(i, a);
   
   draw_grid();
 }
 
 function draw_hover(col) {
-  var color = red_turn_global ? "R":"Y";
+  var color = red_turn_global ? 'R':'Y';
   draw_board();
   switch (color) {
     case 'R':
@@ -286,7 +286,7 @@ function legal_move(tboard, col, output) {
       alert("Please press on the board!");
     return false;
   }
-  if (tboard[col][0]) {
+  if (tboard[col][0] != ' ') {
     if (output)
       alert("Column already full!");
     return false;
@@ -320,10 +320,10 @@ function set_turn(turn, col, row) {
       case "tie":
         alert("Game tied!");
         break;
-      case "R":
+      case 'R':
         alert("Red wins!");
         break;
-      case "Y":
+      case 'Y':
         alert ("Yellow wins!");
         break;
     }
@@ -335,7 +335,7 @@ function set_turn(turn, col, row) {
 function play_move(tboard, col, turn) {
   var color = turn ? 'R':'Y';
   for (var a = tboard[col].length - 1; a >= 0; a--)
-    if (!tboard[col][a]) {
+    if (tboard[col][a] == ' ') {
       tboard[col][a] = color;
       return a;
     }
@@ -394,7 +394,7 @@ function MCTS_get_children(state, father) {
   if (!win)
     win = get_winning_move(tboard, !state.turn);
   if (win) {
-    tboard[win[0]][win[1]] = state.turn ? "R":"Y";
+    tboard[win[0]][win[1]] = state.turn ? 'R':'Y';
     children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, win, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
     tboard[win[0]][win[1]] = false;
     return children;
@@ -435,7 +435,7 @@ function MCTS_simulate(state) {
     case "tie":
       return 0;
     default:
-      return done == (state.turn ? "R":"Y") ? 1:-1;
+      return done == (state.turn ? 'R':'Y') ? 1:-1;
   }
 }
 
@@ -454,7 +454,7 @@ function MCTS_simulate_smart(state) {
         row = play_move(tboard, col, turn);
       }  while (row < 0);
     else {
-      tboard[last_move[0]][last_move[1]] = turn ? "R":"Y";
+      tboard[last_move[0]][last_move[1]] = turn ? 'R':'Y';
       col = last_move[0];
       row = last_move[1];
     }
@@ -466,7 +466,7 @@ function MCTS_simulate_smart(state) {
     case "tie":
       return 0;
     default:
-      return done == (state.turn ? "R":"Y") ? 1:-1;
+      return done == (state.turn ? 'R':'Y') ? 1:-1;
   }
 }
 
@@ -550,7 +550,7 @@ function fpaim() {
 
 function game_over(tboard, x, y) {
   var countConsecutive = 0;
-  var color = 'null';
+  var color = '';
   var i, a;
   
   for (i = x - 3; i <= x + 3; i++) // Horizontal
@@ -561,14 +561,14 @@ function game_over(tboard, x, y) {
         color = tboard[i][y];
         countConsecutive = 1;
       }
-      else	color = 'null';
+      else	color = '';
     else if (countConsecutive == 4)
       return color;
   if (countConsecutive == 4)
     return color;
   
   countConsecutive = 0;
-  color = 'null';
+  color = '';
   
   for (a = y - 3; a <= y + 3; a++) // Vertical
     if (a >= 0 && a < tboard.length && countConsecutive < 4)
@@ -578,14 +578,14 @@ function game_over(tboard, x, y) {
         color = tboard[x][a];
         countConsecutive = 1;
       }
-      else	color = 'null';
+      else	color = '';
     else if (countConsecutive == 4)
       return color;
   if (countConsecutive == 4)
     return color;
   
   countConsecutive = 0;
-  color = 'null';
+  color = '';
   
   for (i = x - 3, a = y - 3; i <= x + 3; i++, a++) // diagonal 1 topleft - bottomright
     if (a >= 0 && a < tboard.length && i >= 0 && i < tboard.length && countConsecutive < 4)
@@ -595,14 +595,14 @@ function game_over(tboard, x, y) {
         color = tboard[i][a];
         countConsecutive = 1;
       }
-      else	color = 'null';
+      else	color = '';
     else if (countConsecutive == 4)
       return color;
   if (countConsecutive == 4)
     return color;
   
   countConsecutive = 0;
-  color = 'null';
+  color = '';
   
   for (i = x - 3, a = y + 3; i <= x + 3; i++, a--) // diagonal 1 topright - bottomleft
     if (a >= 0 && a < tboard.length && i >= 0 && i < tboard.length && countConsecutive < 4)
@@ -612,14 +612,14 @@ function game_over(tboard, x, y) {
         color = tboard[i][a];
         countConsecutive = 1;
       }
-      else	color = 'null';
+      else	color = '';
     else if (countConsecutive == 4)
       return color;
   if (countConsecutive == 4)
     return color;
   
   for (i = 0; i < tboard.length; i++)
-    if (!tboard[i][0])
+    if (tboard[i][0] == ' ')
       return false;
   
   return "tie";
@@ -627,7 +627,7 @@ function game_over(tboard, x, y) {
 
 function game_over_full(tboard) {
   var countConsecutive = 0;
-  var color = 'null';
+  var color = '';
   var i, a;
   
   for (i = 0; i < tboard.length; i++) {
@@ -639,7 +639,7 @@ function game_over_full(tboard) {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 'null';
+        else	color = '';
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -650,7 +650,7 @@ function game_over_full(tboard) {
     return color;
     
   countConsecutive = 0;
-  color = 'null';
+  color = '';
   
   for (a = 0; a < tboard[0].length; a++) {
     for (i = 0; i < tboard.length; i++)
@@ -661,7 +661,7 @@ function game_over_full(tboard) {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 'null';
+        else	color = '';
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -672,7 +672,7 @@ function game_over_full(tboard) {
     return color;
     
   countConsecutive = 0;
-  color = 'null';
+  color = '';
   
   var x, y;
   
@@ -685,7 +685,7 @@ function game_over_full(tboard) {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 'null';
+        else	color = '';
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -696,7 +696,7 @@ function game_over_full(tboard) {
     return color;
     
   countConsecutive = 0;
-  color = 'null';
+  color = '';
   
   for (y = 1; y < tboard[0].length; y++) {
     for (i = 0, a = y; i < tboard.length && a < tboard[i].length; i++, a++)
@@ -707,7 +707,7 @@ function game_over_full(tboard) {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 'null';
+        else	color = '';
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -718,7 +718,7 @@ function game_over_full(tboard) {
     return color;
     
   countConsecutive = 0;
-  color = 'null';
+  color = '';
   
   for (x = 0; x < tboard.length; x++) {
     for (i = x, a = 0; i >= 0 && a < tboard[i].length; i--, a++)
@@ -729,7 +729,7 @@ function game_over_full(tboard) {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 'null';
+        else	color = '';
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -740,7 +740,7 @@ function game_over_full(tboard) {
     return color;
         
   countConsecutive = 0;
-  color = 'null';
+  color = '';
   
   for (y = 1; y < tboard[0].length; y++) {
     for (i = tboard.length - 1, a = y; i >= 0 && a < tboard[i].length; i--, a++)
@@ -751,7 +751,7 @@ function game_over_full(tboard) {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 'null';
+        else	color = '';
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -762,7 +762,7 @@ function game_over_full(tboard) {
     return color;
         
   for (i = 0; i < tboard.length; i++)
-    if (!tboard[i][0])
+    if (tboard[i][0] == ' ')
       return false;
   
   return "tie";
@@ -818,21 +818,21 @@ $('#form-new-game').submit(function() {
       break;
     case "stupid":
       smart_simulation = false;
-      monte_carlo_trials = 10;
+      monte_carlo_trials = dimensions[0] * 2;
       expansion_const = 10;
       certainty_threshold = 0;
       ponder = false;
       break;
     case "ehh":
       smart_simulation = true;
-      monte_carlo_trials = 50;
+      monte_carlo_trials = dimensions[0] * dimensions[1];
       expansion_const = 2;
       certainty_threshold = 0;
       ponder = false;
       break;
     case "play fast":
       smart_simulation = false;
-      monte_carlo_trials = dimensions[0] * 10;
+      monte_carlo_trials = dimensions[0] * dimensions[1];
       expansion_const = 2;
       certainty_threshold = 1;
       ponder = true;
@@ -842,6 +842,13 @@ $('#form-new-game').submit(function() {
       monte_carlo_trials = 1000;
       expansion_const = 10;
       certainty_threshold = 0.4;
+      ponder = true;
+      break;
+    case "play fast ++":
+      smart_simulation = true;
+      monte_carlo_trials = dimensions[0] * dimensions[1] * 10;
+      expansion_const = 2;
+      certainty_threshold = 1;
       ponder = true;
       break;
     case "hard":
