@@ -424,7 +424,7 @@ function MCTS_simulate(state) {
   var row, col;
   while (!done) {
       do {
-        col = Math.floor(Math.random() * tboard.length);
+        col = Math.random() * tboard.length | 0;
         row = play_move(tboard, col, turn);
       }  while (row < 0);
     done = game_over(tboard, col, row);
@@ -450,7 +450,7 @@ function MCTS_simulate_smart(state) {
       last_move = get_winning_move(tboard, !turn);
     if (!last_move)
       do {
-        col = Math.floor(Math.random() * tboard.length);
+        col = Math.random() * tboard.length | 0;
         row = play_move(tboard, col, turn);
       }  while (row < 0);
     else {
@@ -846,7 +846,7 @@ $('#form-new-game').submit(function() {
       break;
     case "play fast ++":
       smart_simulation = true;
-      monte_carlo_trials = dimensions[0] * dimensions[1] * 10;
+      monte_carlo_trials = dimensions[0] * dimensions[1] * 20;
       expansion_const = 2;
       certainty_threshold = 1;
       ponder = true;
@@ -878,10 +878,10 @@ $('#form-new-game').submit(function() {
     ponder = false;
   
   var name = $('input[name="name"]').val();
-  $('input[name="name"]').val(new_cookie_id());
   
   $('#new-game-menu').animate({opacity: 0}, "slow", function() {
     $(this).css('z-index', -1);
+    $('input[name="name"]').val(new_cookie_id());
     new_game(name);
   });
   
