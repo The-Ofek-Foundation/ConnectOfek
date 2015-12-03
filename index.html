@@ -21,7 +21,6 @@
     <g:plusone size="standard" href="http://the-ofek-foundation.github.io/ConnectOfek/" data-align="right" data-annotation="inline"></g:plusone>
   </div>
   
-  
   <div id="new-game-menu">
     <h1 style="margin-top: 0px;">New Game</h1>
     <form id="form-new-game" action="">
@@ -51,6 +50,7 @@
         <option value="ehh"></option>
         <option value="Play Fast">Must allow pondering</option>
         <option value="Normal"></option>
+        <option value="Play Fast ++">Must allow pondering</option>
         <option value="Hard"></option>
         <option value="Very Hard"></option>
         <option value="Good Luck"></option>
@@ -59,7 +59,7 @@
       Ponder? 
       <input type="checkbox" id="ai-ponder" name="ai-ponder">
       <br />
-      Monte Carlo Trials (500 - 50,000):
+      Monte Carlo Trials (500 - 100,000):
       <input type="range" name="mc-trials" id="mc-trials" min="500" max="100000" step="500" value="10000">
       <br />
       Monte Carlo Expansion Constant (0 - 10):
