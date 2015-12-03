@@ -557,7 +557,7 @@ function game_over(tboard, x, y) {
     if (i >= 0 && i < tboard.length && countConsecutive < 4)
       if (tboard[i][y] == color)
         countConsecutive++;
-      else if (tboard[i][y] == 'R' || tboard[i][y] == 'Y') {
+      else if (tboard[i][y] != ' ') {
         color = tboard[i][y];
         countConsecutive = 1;
       }
@@ -574,7 +574,7 @@ function game_over(tboard, x, y) {
     if (a >= 0 && a < tboard.length && countConsecutive < 4)
       if (tboard[x][a] == color)
         countConsecutive++;
-      else if (tboard[x][a] == 'R' || tboard[x][a] == 'Y') {
+      else if (tboard[x][a] != ' ') {
         color = tboard[x][a];
         countConsecutive = 1;
       }
@@ -591,7 +591,7 @@ function game_over(tboard, x, y) {
     if (a >= 0 && a < tboard.length && i >= 0 && i < tboard.length && countConsecutive < 4)
       if (tboard[i][a] == color)
         countConsecutive++;
-      else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
+      else if (tboard[i][a] != ' ') {
         color = tboard[i][a];
         countConsecutive = 1;
       }
@@ -608,7 +608,7 @@ function game_over(tboard, x, y) {
     if (a >= 0 && a < tboard.length && i >= 0 && i < tboard.length && countConsecutive < 4)
       if (tboard[i][a] == color)
         countConsecutive++;
-      else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
+      else if (tboard[i][a] != ' ') {
         color = tboard[i][a];
         countConsecutive = 1;
       }
@@ -635,7 +635,7 @@ function game_over_full(tboard) {
       if (countConsecutive < 4)
         if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
+        else if (tboard[i][a] != ' ') {
           color = tboard[i][a];
           countConsecutive = 1;
         }
@@ -657,7 +657,7 @@ function game_over_full(tboard) {
       if (countConsecutive < 4)
         if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
+        else if (tboard[i][a] != ' ') {
           color = tboard[i][a];
           countConsecutive = 1;
         }
@@ -681,7 +681,7 @@ function game_over_full(tboard) {
       if (countConsecutive < 4)
         if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
+        else if (tboard[i][a] != ' ') {
           color = tboard[i][a];
           countConsecutive = 1;
         }
@@ -703,7 +703,7 @@ function game_over_full(tboard) {
       if (countConsecutive < 4)
         if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
+        else if (tboard[i][a] != ' ') {
           color = tboard[i][a];
           countConsecutive = 1;
         }
@@ -725,7 +725,7 @@ function game_over_full(tboard) {
       if (countConsecutive < 4)
         if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
+        else if (tboard[i][a] != ' ') {
           color = tboard[i][a];
           countConsecutive = 1;
         }
@@ -747,7 +747,7 @@ function game_over_full(tboard) {
       if (countConsecutive < 4)
         if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] == 'R' || tboard[i][a] == 'Y') {
+        else if (tboard[i][a] != ' ') {
           color = tboard[i][a];
           countConsecutive = 1;
         }
