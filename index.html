@@ -3,7 +3,7 @@
 <head>
   <meta name="description" content="Connect Four online Monte Carlo AI! Play against human or strong computer! Save your games easily!">
   <script src="https://code.jquery.com/jquery-2.1.4.js"></script>
-  <script src="http://the-ofek-foundation.github.io/MCTS.js"></script>
+  <script src="https://the-ofek-foundation.github.io/MCTS.js"></script>
   <script src="https://apis.google.com/js/platform.js" async defer></script>
   <meta charset="utf-8">
   <title>Connect Ofek</title>
@@ -61,7 +61,7 @@
       <input type="checkbox" id="ai-ponder" name="ai-ponder">
       <br />
       Monte Carlo Trials (500 - 100,000):
-      <input type="range" name="mc-trials" id="mc-trials" min="500" max="100000" step="500" value="10000">
+      <input type="number" name="mc-trials" id="mc-trials" min="500" max="100000" step="500" value="5000">
       <br />
       Monte Carlo Expansion Constant (0 - 10):
       <input type="range" name="mc-expansion" id="mc-expansion" min="0" max="10" step="0.1" value="2">
@@ -70,7 +70,7 @@
       <input type="number" name="mc-certainty" min="0" max="100" step="1" value="85" required>
       <br />
       Smart simulations (plays forced moves):
-      <input type="checkbox" id="smart-simulation" checked>
+      <input type="checkbox" name="smart-simulation" checked>
       <br />
       Enter a name for the game if you want:
       <input type="text" name="name">
