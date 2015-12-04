@@ -387,12 +387,20 @@ function MCTS_get_children(state, father) {
   var tboard = state.board;
   var children = [];
   
-  if (game_over_full(tboard))
+  if (state.game_over)
     return [];
   
   var win = get_winning_move(tboard, state.turn);
   if (!win)
     win = get_winning_move(tboard, !state.turn);
+  else {
+    tboard[win[0]][win[1]] = state.turn ? 'R':'Y';
+    var nstate = new State($.extend(true, [], tboard), !state.turn);
+    nstate.game_over = true;
+    children.push(new MCTS_Node(nstate, father, win, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
+    tboard[win[0]][win[1]] = false;
+    return children;
+  }
   if (win) {
     tboard[win[0]][win[1]] = state.turn ? 'R':'Y';
     children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, win, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
@@ -418,9 +426,11 @@ function MCTS_get_children(state, father) {
 }
 
 function MCTS_simulate(state) {
+  if (state.game_over)
+    return -1;
   var tboard = $.extend(true, [], state.board);
   
-  var last_move, turn = state.turn, done = game_over_full(tboard);
+  var last_move, turn = state.turn, done = false;
   var row, col;
   while (!done) {
       do {
