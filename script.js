@@ -581,7 +581,7 @@ function game_over(tboard, x, y) {
   color = '';
   
   for (a = y - 3; a <= y + 3; a++) // Vertical
-    if (a >= 0 && a < tboard.length && countConsecutive < 4)
+    if (a >= 0 && a < tboard[0].length && countConsecutive < 4)
       if (tboard[x][a] == color)
         countConsecutive++;
       else if (tboard[x][a] != ' ') {
@@ -598,7 +598,7 @@ function game_over(tboard, x, y) {
   color = '';
   
   for (i = x - 3, a = y - 3; i <= x + 3; i++, a++) // diagonal 1 topleft - bottomright
-    if (a >= 0 && a < tboard.length && i >= 0 && i < tboard.length && countConsecutive < 4)
+    if (a >= 0 && a < tboard[0].length && i >= 0 && i < tboard.length && countConsecutive < 4)
       if (tboard[i][a] == color)
         countConsecutive++;
       else if (tboard[i][a] != ' ') {
@@ -615,7 +615,7 @@ function game_over(tboard, x, y) {
   color = '';
   
   for (i = x - 3, a = y + 3; i <= x + 3; i++, a--) // diagonal 1 topright - bottomleft
-    if (a >= 0 && a < tboard.length && i >= 0 && i < tboard.length && countConsecutive < 4)
+    if (a >= 0 && a < tboard[0].length && i >= 0 && i < tboard.length && countConsecutive < 4)
       if (tboard[i][a] == color)
         countConsecutive++;
       else if (tboard[i][a] != ' ') {
