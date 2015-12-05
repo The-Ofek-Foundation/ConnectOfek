@@ -4,7 +4,7 @@ var dimensions = [7, 6];
 var board;
 var red_turn_global;
 var global_ROOT;
-var expansion_const = 2;
+var expansion_const = 2.5;
 var ai_turn = false;
 var monte_carlo_trials = 5000;
 var over;
@@ -43,6 +43,7 @@ function start_ponder() {
     if (global_ROOT.total_tries < max_trials)
       for (var i = 0; i < monte_carlo_trials / 100; i++)
         global_ROOT.choose_child();
+    update_analysis();
   }, 1);
 }
 
@@ -54,6 +55,12 @@ function adjust_buttons() {
   $('.footer button').css('font-size', disc_height / 4);
   $('.footer').css("height", disc_height / 2);
   $('.footer').css('margin-bottom', disc_height / 4 - $('#back').outerHeight(false));
+  $('.footer #anal').css('line-height', disc_height / 2 + "px");
+}
+
+function update_analysis() {
+  var range = get_MCTS_depth_range();
+  $('#anal').text("Analysis: Best-" + range[1] +" Worst-" + range[0] + " Result-" + range[2]);
 }
 
 function new_game(c_id) {
@@ -93,7 +100,7 @@ function new_game(c_id) {
   draw_board();
   
   if (ai_turn == red_turn_global || ai_turn == 'both')
-    setTimeout(play_ai_move, 50);
+    setTimeout(play_ai_move, 20);
   
   stop_ponder();
   if (ponder)
@@ -121,7 +128,7 @@ function new_game_cookie(cookie) {
   draw_board();
   
   if (ai_turn == red_turn_global || ai_turn == 'both')
-    setTimeout(play_ai_move, 100);
+    setTimeout(play_ai_move, 20);
   
   stop_ponder();
   if (ponder)
@@ -329,7 +336,7 @@ function set_turn(turn, col, row) {
     }
   
   if (!over && (turn === ai_turn || ai_turn == "both"))
-    setTimeout(play_ai_move, 50);
+    setTimeout(play_ai_move, 1);
 }
 
 function play_move(tboard, col, turn) {
@@ -503,15 +510,10 @@ function run_MCTS(times, threshold, callback) {
 function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
   for (var a = 0; a < times / total_times; a++)
     global_ROOT.choose_child();
+  update_analysis();
   draw_hover(most_tried_child(global_ROOT, null).last_move[0]);
   if (threshold > 0) {
-    if (global_ROOT.children.length < 2) {
-      callback();
-      return;
-    }
-    var best_child = most_tried_child(global_ROOT, null);
-    var second_best = most_tried_child(global_ROOT, best_child);
-    if (second_best.total_tries / best_child.total_tries < threshold) {
+    if (global_ROOT.children.length < 2 || get_certainty(global_ROOT) < threshold) {
       callback();
       return;
     }
@@ -520,7 +522,12 @@ function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
     callback();
   else setTimeout(function() {
     run_MCTS_recursive(times, threshold, time_on - 1, total_times, callback);
-  }, 30);
+  }, 1);
+}
+
+function get_certainty(root) {
+  var best_child = most_tried_child(root, null);
+  return most_tried_child(root, best_child).total_tries / best_child.total_tries;
 }
 
 function most_tried_child(root, exclude) {
@@ -535,6 +542,26 @@ function most_tried_child(root, exclude) {
       child = root.children[i];
     }
   return child;
+}
+
+
+function least_tried_child(root) {
+  var least_trials = root.total_tries + 1, child = null;
+  if (!root.children)
+    return null;
+  for (var i = 0; i < root.children.length; i++)
+    if (root.children[i].total_tries < least_trials) {
+      least_trials = root.children[i].total_tries;
+      child = root.children[i];
+    }
+  return child;
+}
+
+function get_MCTS_depth_range() {
+  var root, range = new Array(3);
+  for (range[0] = -1, root = global_ROOT; root && root.children; range[0]++, root = least_tried_child(root));
+  for (range[1] = -1, range[2] = "tie", root = global_ROOT; root && root.children; range[1]++, range[2] = root.total_hits > root.total_misses === root.State.turn ? 'R':'Y', root = most_tried_child(root));
+  return range;
 }
 
 function get_best_move_MCTS() {
@@ -857,28 +884,28 @@ $('#form-new-game').submit(function() {
     case "play fast ++":
       smart_simulation = true;
       monte_carlo_trials = dimensions[0] * dimensions[1] * 20;
-      expansion_const = 2;
+      expansion_const = 2.5;
       certainty_threshold = 1;
       ponder = true;
       break;
     case "hard":
       smart_simulation = true;
       monte_carlo_trials = 5000;
-      expansion_const = 2;
+      expansion_const = 2.5;
       certainty_threshold = 0.25;
       ponder = true;
       break;
     case "very hard":
       smart_simulation = true;
       monte_carlo_trials = 10000;
-      expansion_const = 2;
+      expansion_const = 2.5;
       certainty_threshold = 0.15;
       ponder = true;
       break;
     case "good luck":
       smart_simulation = true;
       monte_carlo_trials = 50000;
-      expansion_const = 2;
+      expansion_const = 2.5;
       certainty_threshold = 0.1;
       ponder = true;
       break;
@@ -887,7 +914,12 @@ $('#form-new-game').submit(function() {
   if (!allow_ponder)
     ponder = false;
   
+  position = $('input[name="position"]').val();
+  
   var name = $('input[name="name"]').val();
+  over = false;
+  
+  save_settings_cookie(name);
   
   $('#new-game-menu').animate({opacity: 0}, "slow", function() {
     $(this).css('z-index', -1);
