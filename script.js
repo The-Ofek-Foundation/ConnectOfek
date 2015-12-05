@@ -10,10 +10,11 @@ var monte_carlo_trials = 5000;
 var over;
 var ponder, pondering;
 var certainty_threshold = 0.15;
-var max_trials = 1500000; // prevents overload (occurs around 2.3 million)
+var max_trials = 1000000; // prevents overload (occurs around 2.3 million)
 var position, cookie_id;
 var ai_stopped = false;
 var smart_simulation = true;
+var increasing_factor = 1.05;
 
 var boardui = document.getElementById("board");
 var brush = boardui.getContext("2d");
@@ -158,6 +159,7 @@ function save_settings_cookie(c_id) {
   settings.dimensions = dimensions;
   settings.expansion_const = expansion_const;
   settings.smart_simulation = smart_simulation;
+  settings.increasing_factor = increasing_factor;
   settings.monte_carlo_trials = monte_carlo_trials;
   settings.certainty_threshold = certainty_threshold;
   
@@ -174,6 +176,7 @@ function load_settings_cookie(cookie) {
   dimensions = settings.dimensions;
   expansion_const = settings.expansion_const;
   smart_simulation = settings.smart_simulation;
+  increasing_factor = settings.increasing_factor;
   monte_carlo_trials = settings.monte_carlo_trials;
   certainty_threshold = settings.certainty_threshold;
 }
@@ -321,6 +324,7 @@ function set_turn(turn, col, row) {
   over = game_over(board, col, row);
   
   save_settings_cookie(cookie_id);
+  update_analysis();
   
   if (over)
     switch (over) {
@@ -334,6 +338,10 @@ function set_turn(turn, col, row) {
         alert ("Yellow wins!");
         break;
     }
+  
+  monte_carlo_trials *= increasing_factor;
+  if (monte_carlo_trials > max_trials)
+    monte_carlo_trials = max_trials;
   
   if (!over && (turn === ai_turn || ai_turn == "both"))
     setTimeout(play_ai_move, 1);
@@ -560,7 +568,7 @@ function least_tried_child(root) {
 function get_MCTS_depth_range() {
   var root, range = new Array(3);
   for (range[0] = -1, root = global_ROOT; root && root.children; range[0]++, root = least_tried_child(root));
-  for (range[1] = -1, range[2] = "tie", root = global_ROOT; root && root.children; range[1]++, range[2] = root.total_hits > root.total_misses === root.State.turn ? 'R':'Y', root = most_tried_child(root));
+  for (range[1] = -1, range[2] = "tie", root = global_ROOT; root && root.children; range[1]++, range[2] = (root.hits == root.misses ? "tie":root.hits > root.misses === root.State.turn ? 'R':'Y'), root = most_tried_child(root));
   return range;
 }
 
@@ -852,6 +860,7 @@ $('#form-new-game').submit(function() {
       expansion_const = $('input[name="mc-expansion"]').val();
       certainty_threshold = (1 - $('input[name="mc-certainty"]').val() / 100).toFixed(2);
       ponder =  $('input[name="ai-ponder"]').prop('checked');
+      increasing_factor = 1.05;
       break;
     case "stupid":
       smart_simulation = false;
@@ -859,6 +868,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 10;
       certainty_threshold = 0;
       ponder = false;
+      increasing_factor = 1;
       break;
     case "ehh":
       smart_simulation = true;
@@ -866,6 +876,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 2;
       certainty_threshold = 0;
       ponder = false;
+      increasing_factor = 1;
       break;
     case "play fast":
       smart_simulation = false;
@@ -873,6 +884,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 2;
       certainty_threshold = 1;
       ponder = true;
+      increasing_factor = 1.05;
       break;
     case "normal":
       smart_simulation = true;
@@ -880,6 +892,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 10;
       certainty_threshold = 0.4;
       ponder = true;
+      increasing_factor = 1.1;
       break;
     case "play fast ++":
       smart_simulation = true;
@@ -887,6 +900,15 @@ $('#form-new-game').submit(function() {
       expansion_const = 2.5;
       certainty_threshold = 1;
       ponder = true;
+      increasing_factor = 1.08;
+      break;
+    case "win fast":
+      smart_simulation = true;
+      monte_carlo_trials = dimensions[0] * dimensions[1];
+      expansion_const = 2.5;
+      certainty_threshold = 0.25;
+      ponder = false;
+      increasing_factor = 1.2;
       break;
     case "hard":
       smart_simulation = true;
@@ -894,6 +916,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 2.5;
       certainty_threshold = 0.25;
       ponder = true;
+      increasing_factor = 1.08;
       break;
     case "very hard":
       smart_simulation = true;
@@ -901,6 +924,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 2.5;
       certainty_threshold = 0.15;
       ponder = true;
+      increasing_factor = 1.08;
       break;
     case "good luck":
       smart_simulation = true;
@@ -908,6 +932,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 2.5;
       certainty_threshold = 0.1;
       ponder = true;
+      increasing_factor = 1.08;
       break;
   }
   
@@ -915,6 +940,9 @@ $('#form-new-game').submit(function() {
     ponder = false;
   
   position = $('input[name="position"]').val();
+  monte_carlo_trials = monte_carlo_trials * Math.pow(increasing_factor, position.length);
+  if (monte_carlo_trials > max_trials)
+    monte_carlo_trials = max_trials;
   
   var name = $('input[name="name"]').val();
   over = false;
