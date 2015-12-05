@@ -38,6 +38,10 @@ body {
 .footer button#start-ai {
   background-color: green;
 }
+.footer #anal {
+  float: left;
+  margin: auto 30px;
+}
 #new-game-menu {
   position: absolute;
   visibility: visible;
