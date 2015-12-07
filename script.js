@@ -412,13 +412,13 @@ function MCTS_get_children(state, father) {
     tboard[win[0]][win[1]] = state.turn ? 'R':'Y';
     var nstate = new State($.extend(true, [], tboard), !state.turn);
     nstate.game_over = true;
-    children.push(new MCTS_Node(nstate, father, win, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
+    children.push(new MCTS_Node(nstate, father, win));
     tboard[win[0]][win[1]] = ' ';
     return children;
   }
   if (win) {
     tboard[win[0]][win[1]] = state.turn ? 'R':'Y';
-    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, win, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
+    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, win));
     tboard[win[0]][win[1]] = ' ';
     return children;
   }
@@ -427,7 +427,7 @@ function MCTS_get_children(state, father) {
     row = play_move(tboard, col, state.turn);
     if (row < 0)
       continue;
-    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, [col, row], smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
+    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, [col, row]));
     tboard[col][row] = ' ';
   }
   
@@ -440,7 +440,9 @@ function MCTS_get_children(state, father) {
   return children;
 }
 
-function MCTS_simulate(state) {
+var MCTS_simulate;
+
+function MCTS_dumb_simulate(state) {
   if (state.game_over)
     return -1;
   var tboard = $.extend(true, [], state.board);
@@ -496,7 +498,8 @@ function MCTS_simulate_smart(state) {
 }
 
 function create_MCTS_root() {
-  return new MCTS_Node(new State(board, red_turn_global), null, null, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const);
+  MCTS_simulate = smart_simulation ? MCTS_simulate_smart:MCTS_dumb_simulate;
+  return new MCTS_Node(new State(board, red_turn_global), null, null);
 }
 
 function MCTS_get_next_root(col) {
@@ -584,7 +587,7 @@ function get_best_move_MCTS() {
 function play_ai_move() {
   ai_stopped = false;
   
-  if (global_ROOT.total_tries < monte_carlo_trials && certainty_threshold < 1 && position.length > 0)
+  if (global_ROOT.total_tries < monte_carlo_trials && certainty_threshold < 1 && position.length > 0 && !(global_ROOT.children && global_ROOT.children.length == 1))
     run_MCTS(monte_carlo_trials - global_ROOT.total_tries, certainty_threshold, fpaim);
   else fpaim();
 }
@@ -936,6 +939,14 @@ $('#form-new-game').submit(function() {
       ponder = true;
       increasing_factor = 1.08;
       break;
+    case "wreckage":
+      smart_simulation = true;
+      monte_carlo_trials = 200000;
+      expansion_const = 2.5;
+      certainty_threshold = 0.05;
+      ponder = true;
+      increasing_factor = 1.08;
+      break;
   }
   
   if (!allow_ponder)
@@ -968,9 +979,14 @@ $('#btn-new-game-cancel').click(function() {
 });
 
 $('#back').click(function() {
-  if (ai_turn === true || ai_turn === false)
+  if (ai_turn === true || ai_turn === false) {
     position = position.substring(0, position.length - 2);
-  else position = position.substring(0, position.length - 1);
+    monte_carlo_trials /= Math.pow(increasing_factor, 2);
+  }
+  else {
+    position = position.substring(0, position.length - 1);
+    monte_carlo_trials /= increasing_factor;
+  }
   over = false;
   
   save_settings_cookie(cookie_id);
@@ -1008,3 +1024,71 @@ function getCookie(cname) {
     }
     return "";
 }
+
+var State = function(board, turn) {
+  this.board = board;
+  this.turn = turn;
+};
+
+
+var MCTS_Node = function(State, parent, last_move) {
+  this.State = State;
+  this.parent = parent;
+  this.last_move = last_move;
+  this.hits = 0;
+  this.misses = 0;
+  this.total_tries = 0;
+};
+
+function MCTS_child_potential(child, t) {
+  var w = child.misses - child.hits;
+  var n = child.total_tries;
+  var c = expansion_const;
+  
+  return w / n  +  c * Math.sqrt(Math.log(t) / n);
+}
+
+MCTS_Node.prototype.choose_child = function() {
+  if (!this.children)
+    this.children = MCTS_get_children(this.State, this);
+  if (this.children.length === 0) // leaf node
+    this.run_simulation();
+  else {
+    var i;
+    var unexplored = [];
+    for (i = 0; i < this.children.length; i++)
+      if (this.children[i].total_tries === 0)
+        unexplored.push(this.children[i]);
+
+    if (unexplored.length > 0)
+      unexplored[Math.floor(Math.random() * unexplored.length)].run_simulation();
+    else {
+      var best_child = this.children[0], best_potential = MCTS_child_potential(this.children[0], this.total_tries), potential;
+      for (i = 1; i < this.children.length; i++) {
+        potential = MCTS_child_potential(this.children[i], this.total_tries);
+        if (potential > best_potential) {
+          best_potential = potential;
+          best_child = this.children[i];
+        }
+      }
+      best_child.choose_child();
+    }
+  }
+};
+
+MCTS_Node.prototype.run_simulation = function() {
+  this.back_propogate(MCTS_simulate(this.State));
+};
+
+MCTS_Node.prototype.back_propogate = function(simulation) {
+  if (simulation > 0)
+    this.hits++;
+  else if (simulation < 0)
+    this.misses++;
+  this.total_tries++;
+  if (this.parent) {
+    if (this.parent.State.turn === this.State.turn)
+      this.parent.back_propogate(simulation);
+    else this.parent.back_propogate(-simulation);
+  }
+};
