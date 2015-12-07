@@ -10,7 +10,7 @@ var monte_carlo_trials = 5000;
 var over;
 var ponder, pondering;
 var certainty_threshold = 0.15;
-var max_trials = 1000000; // prevents overload (occurs around 2.3 million)
+var max_trials = 500000; // prevents overload (occurs around 600k)
 var position, cookie_id;
 var ai_stopped = false;
 var smart_simulation = true;
@@ -902,7 +902,7 @@ $('#form-new-game').submit(function() {
     case "play fast ++":
       smart_simulation = true;
       monte_carlo_trials = dimensions[0] * dimensions[1] * 20;
-      expansion_const = 2.5;
+      expansion_const = 2;
       certainty_threshold = 1;
       ponder = true;
       increasing_factor = 1.08;
@@ -910,7 +910,7 @@ $('#form-new-game').submit(function() {
     case "win fast":
       smart_simulation = true;
       monte_carlo_trials = dimensions[0] * dimensions[1];
-      expansion_const = 2.5;
+      expansion_const = 2;
       certainty_threshold = 0.25;
       ponder = false;
       increasing_factor = 1.2;
@@ -918,7 +918,7 @@ $('#form-new-game').submit(function() {
     case "hard":
       smart_simulation = true;
       monte_carlo_trials = 5000;
-      expansion_const = 2.5;
+      expansion_const = 2;
       certainty_threshold = 0.25;
       ponder = true;
       increasing_factor = 1.07;
@@ -926,7 +926,7 @@ $('#form-new-game').submit(function() {
     case "very hard":
       smart_simulation = true;
       monte_carlo_trials = 10000;
-      expansion_const = 2.5;
+      expansion_const = 2;
       certainty_threshold = 0.15;
       ponder = true;
       increasing_factor = 1.07;
@@ -934,7 +934,7 @@ $('#form-new-game').submit(function() {
     case "good luck":
       smart_simulation = true;
       monte_carlo_trials = 50000;
-      expansion_const = 2.5;
+      expansion_const = 2;
       certainty_threshold = 0.1;
       ponder = true;
       increasing_factor = 1.07;
@@ -942,7 +942,7 @@ $('#form-new-game').submit(function() {
     case "wreckage":
       smart_simulation = true;
       monte_carlo_trials = 200000;
-      expansion_const = 2.5;
+      expansion_const = 2;
       certainty_threshold = 0.05;
       ponder = true;
       increasing_factor = 1.07;
