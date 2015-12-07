@@ -535,7 +535,9 @@ function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
 
 function get_certainty(root) {
   var best_child = most_tried_child(root, null);
-  return most_tried_child(root, best_child).total_tries / best_child.total_tries;
+  var ratio = most_tried_child(root, best_child).total_tries / best_child.total_tries;
+  var ratio_wins = best_child.hits / best_child.misses * 2;
+  return ratio > ratio_wins ? ratio_wins:ratio;
 }
 
 function most_tried_child(root, exclude) {
