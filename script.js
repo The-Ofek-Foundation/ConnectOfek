@@ -921,7 +921,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 2.5;
       certainty_threshold = 0.25;
       ponder = true;
-      increasing_factor = 1.08;
+      increasing_factor = 1.07;
       break;
     case "very hard":
       smart_simulation = true;
@@ -929,7 +929,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 2.5;
       certainty_threshold = 0.15;
       ponder = true;
-      increasing_factor = 1.08;
+      increasing_factor = 1.07;
       break;
     case "good luck":
       smart_simulation = true;
@@ -937,7 +937,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 2.5;
       certainty_threshold = 0.1;
       ponder = true;
-      increasing_factor = 1.08;
+      increasing_factor = 1.07;
       break;
     case "wreckage":
       smart_simulation = true;
@@ -945,7 +945,7 @@ $('#form-new-game').submit(function() {
       expansion_const = 2.5;
       certainty_threshold = 0.05;
       ponder = true;
-      increasing_factor = 1.08;
+      increasing_factor = 1.07;
       break;
   }
   
