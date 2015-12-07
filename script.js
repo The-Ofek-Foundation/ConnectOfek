@@ -413,13 +413,13 @@ function MCTS_get_children(state, father) {
     var nstate = new State($.extend(true, [], tboard), !state.turn);
     nstate.game_over = true;
     children.push(new MCTS_Node(nstate, father, win, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
-    tboard[win[0]][win[1]] = false;
+    tboard[win[0]][win[1]] = ' ';
     return children;
   }
   if (win) {
     tboard[win[0]][win[1]] = state.turn ? 'R':'Y';
     children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, win, smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
-    tboard[win[0]][win[1]] = false;
+    tboard[win[0]][win[1]] = ' ';
     return children;
   }
   var row;
@@ -428,7 +428,7 @@ function MCTS_get_children(state, father) {
     if (row < 0)
       continue;
     children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, [col, row], smart_simulation ? MCTS_simulate_smart:MCTS_simulate, MCTS_get_children, expansion_const));
-    tboard[col][row] = false;
+    tboard[col][row] = ' ';
   }
   
   for (var i = 0; i < children.length - 1; i++)
