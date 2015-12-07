@@ -390,10 +390,10 @@ function get_winning_move(tboard, turn) {
     if (row < 0)
       continue;
     if (game_over(tboard, col, row)) {
-      tboard[col][row] = false;
+      tboard[col][row] = ' ';
       return [col, row];
     }
-    tboard[col][row] = false;
+    tboard[col][row] = ' ';
   }
   return false;
 }
