@@ -62,6 +62,7 @@ function adjust_buttons() {
 function update_analysis() {
   var range = get_MCTS_depth_range();
   $('#anal').text("Analysis: Best-" + range[1] +" Worst-" + range[0] + " Result-" + range[2]);
+  $('#num-trials').text("Trials: " + global_ROOT.total_tries);
 }
 
 function new_game(c_id) {
