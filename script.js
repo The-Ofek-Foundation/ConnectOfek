@@ -56,7 +56,7 @@ function adjust_buttons() {
   $('.footer button').css('font-size', disc_height / 4);
   $('.footer').css("height", disc_height / 2);
   $('.footer').css('margin-bottom', disc_height / 4 - $('#back').outerHeight(false));
-  $('.footer #anal').css('line-height', disc_height / 2 + "px");
+  $('.footer div').css('line-height', disc_height / 2 + "px");
 }
 
 function update_analysis() {
