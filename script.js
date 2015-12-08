@@ -539,7 +539,7 @@ function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
 function get_certainty(root) {
   var best_child = most_tried_child(root, null);
   var ratio = most_tried_child(root, best_child).total_tries / best_child.total_tries;
-  var ratio_wins = best_child.hits / best_child.misses * 2;
+  var ratio_wins = best_child.hits > best_child.misses ? (best_child.hits / best_child.misses * 2):(best_child.misses / best_child.hits * 3);
   return ratio > ratio_wins ? ratio_wins:ratio;
 }
 
@@ -587,7 +587,7 @@ function get_best_move_MCTS() {
 function play_ai_move() {
   ai_stopped = false;
   
-  if (global_ROOT.total_tries < monte_carlo_trials && certainty_threshold < 1 && position.length > 0 && !(global_ROOT.children && global_ROOT.children.length == 1))
+  if (global_ROOT.total_tries < monte_carlo_trials && certainty_threshold < 1 && position.length > 0 && !(global_ROOT && global_ROOT.children && global_ROOT.children.length == 1))
     run_MCTS(monte_carlo_trials - global_ROOT.total_tries, certainty_threshold, fpaim);
   else fpaim();
 }
