@@ -39,8 +39,14 @@ body {
   background-color: green;
 }
 .footer #anal {
-  float: left;
+  left: 0px;
   margin: auto 30px;
+  position: absolute;
+}
+.footer #num-trials {
+  right: 0px;
+  margin: auto 30px;
+  position: absolute;
 }
 #new-game-menu {
   position: absolute;
