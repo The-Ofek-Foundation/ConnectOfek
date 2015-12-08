@@ -909,11 +909,11 @@ $('#form-new-game').submit(function() {
       break;
     case "win fast":
       smart_simulation = true;
-      monte_carlo_trials = dimensions[0] * dimensions[1];
+      monte_carlo_trials = dimensions[0];
       expansion_const = 2;
       certainty_threshold = 0.25;
       ponder = false;
-      increasing_factor = 1.2;
+      increasing_factor = 1.4;
       break;
     case "hard":
       smart_simulation = true;
