@@ -344,7 +344,7 @@ function set_turn(turn, col, row) {
     monte_carlo_trials = max_trials;
   
   if (!over && (turn === ai_turn || ai_turn == "both"))
-    setTimeout(play_ai_move, 1);
+    setTimeout(play_ai_move, 25);
 }
 
 function play_move(tboard, col, turn) {
@@ -1055,13 +1055,23 @@ MCTS_Node.prototype.choose_child = function() {
     this.run_simulation();
   else {
     var i;
-    var unexplored = [];
+    var count_unexplored = 0;
     for (i = 0; i < this.children.length; i++)
       if (this.children[i].total_tries === 0)
-        unexplored.push(this.children[i]);
+        count_unexplored++;
 
-    if (unexplored.length > 0)
-      unexplored[Math.floor(Math.random() * unexplored.length)].run_simulation();
+    if (count_unexplored > 0) {
+      var ran = Math.floor(Math.random() * count_unexplored);
+      for (i = 0; i < this.children.length; i++)
+        if (this.children[i].total_tries === 0) {
+          count_unexplored--;
+          if (count_unexplored === 0) {
+            this.children[i].run_simulation();
+            return;
+          }
+        }
+      
+    }
     else {
       var best_child = this.children[0], best_potential = MCTS_child_potential(this.children[0], this.total_tries), potential;
       for (i = 1; i < this.children.length; i++) {
