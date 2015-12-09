@@ -56,7 +56,8 @@ function adjust_buttons() {
   $('.footer button').css('font-size', disc_height / 4);
   $('.footer').css("height", disc_height / 2);
   $('.footer').css('margin-bottom', disc_height / 4 - $('#back').outerHeight(false));
-  $('.footer div').css('line-height', disc_height / 2 + "px");
+  $('.footer #anal').css('line-height', disc_height / 2 + "px");
+  $('.footer #num-trials').css('line-height', disc_height / 2 + "px");
 }
 
 function update_analysis() {
@@ -67,17 +68,17 @@ function update_analysis() {
 
 function new_game(c_id) {
   cookie_id = c_id.replace(/#/g, "");
+  
+  if (cookie_id.length === 0)
+    cookie_id = new_cookie_id();
+  
+  window.location.hash = cookie_id;
 
   var cookie = getCookie(cookie_id);
   if (cookie && cookie.length > 0) {
     new_game_cookie(cookie);
     return;
   }
-  
-  if (cookie_id.length === 0)
-    cookie_id = new_cookie_id();
-  
-  window.location.hash = cookie_id;
   
   disc_width = docwidth / (dimensions[0] + 1);
   disc_height = docheight / (dimensions[1] + 1);
@@ -254,6 +255,7 @@ function draw_piece(x, y) {
 
 function draw_board() {
   clear_board();
+  update_analysis();
   
   for (var i = 0; i < board.length; i++)
     for (var a = 0; a < board[i].length; a++)
@@ -325,7 +327,6 @@ function set_turn(turn, col, row) {
   over = game_over(board, col, row);
   
   save_settings_cookie(cookie_id);
-  update_analysis();
   
   if (over)
     switch (over) {
@@ -522,10 +523,11 @@ function run_MCTS(times, threshold, callback) {
 function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
   for (var a = 0; a < times / total_times; a++)
     global_ROOT.choose_child();
-  update_analysis();
   draw_hover(most_tried_child(global_ROOT, null).last_move[0]);
   if (threshold > 0) {
-    if (global_ROOT.children.length < 2 || get_certainty(global_ROOT) < threshold) {
+    var error = get_certainty(global_ROOT);
+    console.log(error);
+    if (global_ROOT.children.length < 2 || error < threshold) {
       callback();
       return;
     }
@@ -910,11 +912,11 @@ $('#form-new-game').submit(function() {
       break;
     case "win fast":
       smart_simulation = true;
-      monte_carlo_trials = dimensions[0] * dimensions[1] / 2;
+      monte_carlo_trials = dimensions[0] * dimensions[1];
       expansion_const = 2;
       certainty_threshold = 0.25;
       ponder = false;
-      increasing_factor = 1.35;
+      increasing_factor = 1.3;
       break;
     case "hard":
       smart_simulation = true;
