@@ -377,7 +377,7 @@ $('#board').mousedown(function (e) {
 });
 
 $('#board').mousemove(function (e) {
-  if (red_turn_global == ai_turn || ai_turn == "both")
+  if (red_turn_global == ai_turn || ai_turn == "both" || over)
     return;
   var col = get_col(e.pageX);
   if (!legal_move(board, col, false))
