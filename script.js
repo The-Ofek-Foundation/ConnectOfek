@@ -906,7 +906,7 @@ $('#form-new-game').submit(function() {
       break;
     case "play fast ++":
       smart_simulation = true;
-      monte_carlo_trials = dimensions[0] * dimensions[1] * 20;
+      monte_carlo_trials = dimensions[0] * dimensions[1] * 40;
       expansion_const = 2;
       certainty_threshold = 1;
       ponder = true;
