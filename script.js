@@ -899,7 +899,7 @@ $('#form-new-game').submit(function() {
       monte_carlo_trials = 1000;
       expansion_const = 10;
       certainty_threshold = 0.4;
-      ponder = true;
+      ponder = false;
       increasing_factor = 1.1;
       break;
     case "play fast ++":
