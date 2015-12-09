@@ -328,7 +328,7 @@ function set_turn(turn, col, row) {
   
   save_settings_cookie(cookie_id);
   
-  if (over)
+  if (over) {
     switch (over) {
       case "tie":
         alert("Game tied!");
@@ -340,6 +340,8 @@ function set_turn(turn, col, row) {
         alert ("Yellow wins!");
         break;
     }
+    stop_ponder();
+  }
   
   monte_carlo_trials *= increasing_factor;
   if (monte_carlo_trials > max_trials)
