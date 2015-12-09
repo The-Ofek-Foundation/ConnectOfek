@@ -47,6 +47,7 @@ body {
   right: 0px;
   margin: auto 30px;
   position: absolute;
+  bottom: 0px;
 }
 #new-game-menu {
   position: absolute;
