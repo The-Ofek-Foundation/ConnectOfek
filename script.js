@@ -10,7 +10,7 @@ var monte_carlo_trials = 5000;
 var over;
 var ponder, pondering;
 var certainty_threshold = 0.15;
-var max_trials = 500000; // prevents overload (occurs around 600k)
+var max_trials = 1000000; // prevents overload
 var position, cookie_id;
 var ai_stopped = false;
 var smart_simulation = true;
@@ -62,8 +62,18 @@ function adjust_buttons() {
 
 function update_analysis() {
   var range = get_MCTS_depth_range();
-  $('#anal').text("Analysis: Best-" + range[1] +" Worst-" + range[0] + " Result-" + range[2]);
+  $('#anal').text("Analysis: Depth-" + range[1] + " Result-" + range[2] + " Certainty-" + (global_ROOT && global_ROOT.total_tries > 0 ? (result_certainty(global_ROOT) * 100).toFixed(0):"0") + "%");
   $('#num-trials').text("Trials: " + global_ROOT.total_tries);
+}
+
+function result_certainty(root) {
+  if (root.total_tries > (root.hits + root.misses) * 2)
+    return 1 - (root.hits + root.misses) / root.total_tries;
+  else if (root.hits > root.misses)
+    return (root.hits - root.misses) / root.total_tries;
+  else if (root.hits < root.misses)
+    return (root.misses - root.hits) / root.total_tries;
+  else return 1 - (root.hits + root.misses) / root.total_tries;
 }
 
 function new_game(c_id) {
@@ -403,7 +413,7 @@ function get_winning_move(tboard, turn) {
 }
 
 function MCTS_get_children(state, father) {
-  var tboard = state.board;
+  var tboard = onetotwod(state.board);
   var children = [];
   
   if (state.game_over)
@@ -414,7 +424,8 @@ function MCTS_get_children(state, father) {
     win = get_winning_move(tboard, !state.turn);
   else {
     tboard[win[0]][win[1]] = state.turn ? 'R':'Y';
-    var nstate = new State($.extend(true, [], tboard), !state.turn);
+//     var nstate = new State($.extend(true, [], tboard), !state.turn);
+    var nstate = new State(twotooned(tboard), !state.turn);
     nstate.game_over = true;
     children.push(new MCTS_Node(nstate, father, win));
     tboard[win[0]][win[1]] = ' ';
@@ -422,7 +433,7 @@ function MCTS_get_children(state, father) {
   }
   if (win) {
     tboard[win[0]][win[1]] = state.turn ? 'R':'Y';
-    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, win));
+    children.push(new MCTS_Node(new State(twotooned(tboard), !state.turn), father, win));
     tboard[win[0]][win[1]] = ' ';
     return children;
   }
@@ -431,13 +442,13 @@ function MCTS_get_children(state, father) {
     row = play_move(tboard, col, state.turn);
     if (row < 0)
       continue;
-    children.push(new MCTS_Node(new State($.extend(true, [], tboard), !state.turn), father, [col, row]));
+    children.push(new MCTS_Node(new State(twotooned(tboard), !state.turn), father, [col, row]));
     tboard[col][row] = ' ';
   }
   
   for (var i = 0; i < children.length - 1; i++)
     for (var a = i + 1; a < children.length; a++)
-      if (identical_boards(children[i].State.board, children[a].State.board)) {
+      if (identical_boards(onetotwod(children[i].State.board), onetotwod(children[a].State.board))) {
         children.splice(a, 1);
         a--;
       }
@@ -449,7 +460,8 @@ var MCTS_simulate;
 function MCTS_dumb_simulate(state) {
   if (state.game_over)
     return -1;
-  var tboard = $.extend(true, [], state.board);
+  var tboard = onetotwod(state.board);
+//   var tboard = $.extend(true, [], state.board);
   
   var last_move, turn = state.turn, done = false;
   var row, col;
@@ -471,7 +483,8 @@ function MCTS_dumb_simulate(state) {
 }
 
 function MCTS_simulate_smart(state) {
-  var tboard = $.extend(true, [], state.board);
+  var tboard = onetotwod(state.board);
+//   var tboard = $.extend(true, [], state.board);
   
   var last_move, turn = state.turn, done = game_over_full(tboard);
   var row, col;
@@ -503,7 +516,7 @@ function MCTS_simulate_smart(state) {
 
 function create_MCTS_root() {
   MCTS_simulate = smart_simulation ? MCTS_simulate_smart:MCTS_dumb_simulate;
-  return new MCTS_Node(new State(board, red_turn_global), null, null);
+  return new MCTS_Node(new State(twotooned(board), red_turn_global), null, null);
 }
 
 function MCTS_get_next_root(col) {
@@ -578,7 +591,14 @@ function least_tried_child(root) {
 function get_MCTS_depth_range() {
   var root, range = new Array(3);
   for (range[0] = -1, root = global_ROOT; root && root.children; range[0]++, root = least_tried_child(root));
-  for (range[1] = -1, range[2] = "tie", root = global_ROOT; root && root.children; range[1]++, range[2] = (root.hits == root.misses ? "tie":root.hits > root.misses === root.State.turn ? 'R':'Y'), root = most_tried_child(root));
+  for (range[1] = -1, root = global_ROOT; root && root.children; range[1]++, root = most_tried_child(root));
+  if (global_ROOT.total_tries > (global_ROOT.hits + global_ROOT.misses) * 2)
+    range[2] = "Tie";
+  else if ((global_ROOT.hits > global_ROOT.misses) == red_turn_global)
+    range[2] = "R";
+  else if ((global_ROOT.hits < global_ROOT.misses) == red_turn_global)
+    range[2] = "Y";
+  else range[2] = "Tie";
   return range;
 }
 
@@ -601,6 +621,20 @@ function fpaim() {
   var best_move = get_best_move_MCTS();
   play_move(board, best_move[0], red_turn_global);
   set_turn(!red_turn_global, best_move[0], best_move[1]);
+}
+
+function onetotwod(oned) {
+  var twod = new Array(dimensions[0]);
+  for (var i = 0; i < dimensions[0]; i++)
+    twod[i] = oned.slice(i * dimensions[1], (i + 1) * dimensions[1]);
+  return twod;
+}
+
+function twotooned(twod) {
+  var oned = new Array(dimensions[0] * dimensions[1]);
+  for (var i = 0; i < dimensions[0] * dimensions[1]; i++)
+    oned[i] = twod[i / dimensions[1] | 0][i % dimensions[1]];
+  return oned;
 }
 
 function game_over(tboard, x, y) {
@@ -946,7 +980,7 @@ $('#form-new-game').submit(function() {
       break;
     case "wreckage":
       smart_simulation = true;
-      monte_carlo_trials = 200000;
+      monte_carlo_trials = 400000;
       expansion_const = 2;
       certainty_threshold = 0.05;
       ponder = true;
@@ -1107,3 +1141,24 @@ MCTS_Node.prototype.back_propogate = function(simulation) {
     else this.parent.back_propogate(-simulation);
   }
 };
+
+function efficiency_test() {
+  global_ROOT = create_MCTS_root();
+  var total_trials, start = new Date().getTime();
+  for (total_trials = 0; total_trials < 100000; total_trials++)
+    global_ROOT.choose_child();
+  console.log((new Date().getTime() - start) / 1E3);
+  setInterval(function() {
+    for (var i = 0; i < 1000; i++)
+      global_ROOT.choose_child();
+    $('#num-trials').text(global_ROOT.total_tries);
+  }, 1);
+}
+
+function speed_test() {
+  global_ROOT = create_MCTS_root();
+  var total_trials, start = new Date().getTime();
+  for (total_trials = 0; total_trials < 100000; total_trials++)
+    global_ROOT.choose_child();
+  console.log((new Date().getTime() - start) / 1E3);
+}
