@@ -462,7 +462,7 @@ function MCTS_get_children(state, father) {
   
   for (var i = 0; i < children.length - 1; i++)
     for (var a = i + 1; a < children.length; a++)
-      if (ib(children[i].State.board, children[a].State.board)) {
+      if (identical_boards(setup_board(children[i].State.board), setup_board(children[a].State.board))) {
         children.splice(a, 1);
         a--;
       }
