@@ -996,7 +996,7 @@ $('#form-new-game').submit(function() {
     monte_carlo_trials = max_trials;
   
   var name = $('input[name="name"]').val();
-  over = false;
+  over = -1;
   
   save_settings_cookie(name);
   
@@ -1025,7 +1025,7 @@ $('#back').click(function() {
     position = position.substring(0, position.length - 1);
     monte_carlo_trials /= increasing_factor;
   }
-  over = false;
+  over = -1;
   
   save_settings_cookie(cookie_id);
   
