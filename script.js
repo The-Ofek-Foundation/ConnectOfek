@@ -96,7 +96,7 @@ function new_game(c_id) {
   
   adjust_buttons();
   
-  over = false;
+  over = -1;
   board = new Array(dimensions[0]);
   for (var i = 0; i < board.length; i++) {
     board[i] = new Array(dimensions[1]);
@@ -350,7 +350,7 @@ function set_turn(turn, col, row) {
   
   var mtc = most_tried_child(global_ROOT, null);
   
-  if (!over && (turn === ai_turn || ai_turn == "both") && mtc && mtc.last_move)
+  if (over == -1 && (turn === ai_turn || ai_turn == "both") && mtc && mtc.last_move)
     draw_hover(mtc.last_move[0]);
   else  draw_board();
   
@@ -377,7 +377,7 @@ function set_turn(turn, col, row) {
   if (monte_carlo_trials > max_trials)
     monte_carlo_trials = max_trials;
   
-  if (!over && (turn === ai_turn || ai_turn == "both"))
+  if (over == -1 && (turn === ai_turn || ai_turn == "both"))
     setTimeout(play_ai_move, 25);
 }
 
@@ -396,7 +396,7 @@ $('#board').mousedown(function (e) {
     return;
   if (red_turn_global == ai_turn || ai_turn == "both")
     return;
-  if (over) {
+  if (over != -1) {
     alert("The game is already over!");
     return;
   }
@@ -409,7 +409,7 @@ $('#board').mousedown(function (e) {
 });
 
 $('#board').mousemove(function (e) {
-  if (red_turn_global == ai_turn || ai_turn == "both" || over)
+  if (red_turn_global == ai_turn || ai_turn == "both" || over != -1)
     return;
   var col = get_col(e.pageX);
   if (!legal_move(board, col, false))
@@ -611,7 +611,6 @@ function get_best_move_MCTS() {
 
 function play_ai_move() {
   ai_stopped = false;
-  
   if (!global_ROOT || global_ROOT.total_tries < monte_carlo_trials && certainty_threshold < 1 && !(global_ROOT.children && global_ROOT.children.length == 1))
     run_MCTS(monte_carlo_trials - global_ROOT.total_tries, certainty_threshold, fpaim);
   else fpaim();
