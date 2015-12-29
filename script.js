@@ -551,7 +551,7 @@ function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
     callback();
   else setTimeout(function() {
     run_MCTS_recursive(times, threshold, time_on - 1, total_times, callback);
-  }, 35);
+  }, 1);
 }
 
 function get_certainty(root) {
