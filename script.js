@@ -459,8 +459,22 @@ function MCTS_get_children(state, father) {
   for (col = 0; col < tboard.length; col++)
     if (tboard[col][0] === 0)
       children[--count] = new MCTS_Node(new State(state.board + (col + 1), !state.turn), father, col);
+  
+  for (var i = 0; i < children.length - 1; i++)
+    for (var a = i + 1; a < children.length; a++)
+      if (ib(children[i].State.board, children[a].State.board)) {
+        children.splice(a, 1);
+        a--;
+      }
 
   return children;
+}
+
+function ib (b1, b2) {
+  for (var i = 0; i < b1.length; i++)
+    if (+b1.charAt(i) != +b2.charAt(i) && +b1.charAt(i) != dimensions[0] - +b2.charAt(i))
+      return false;
+  return true;
 }
 
 var MCTS_simulate;
@@ -592,7 +606,7 @@ function get_MCTS_depth_range() {
   var root, range = new Array(3);
   for (range[0] = -1, root = global_ROOT; root && root.children; range[0]++, root = least_tried_child(root));
   for (range[1] = -1, root = global_ROOT; root && root.children; range[1]++, root = most_tried_child(root));
-  if (global_ROOT.total_tries > (global_ROOT.hits + global_ROOT.misses) * 2)
+  if (global_ROOT.total_tries > (global_ROOT.hits + global_ROOT.misses) * 3)
     range[2] = "Tie";
   else if ((global_ROOT.hits > global_ROOT.misses) == red_turn_global)
     range[2] = "R";
