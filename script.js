@@ -10,7 +10,6 @@ var monte_carlo_trials = 10000;
 var over;
 var ponder, pondering;
 var certainty_threshold = 0.15;
-var max_trials = 2000000; // prevents overload
 var position, cookie_id;
 var ai_stopped = false;
 var smart_simulation = true;
@@ -18,6 +17,7 @@ var increasing_factor = 1.05;
 
 var boardui = document.getElementById("board");
 var brush = boardui.getContext("2d");
+var num_choose1, num_choose2, num_choose3, lnc1, lnc2, lnc3, stop_choose;
 
 $(document).ready(function() {
   docwidth = $(document).outerWidth(true);
@@ -42,9 +42,18 @@ function start_ponder() {
     if (!global_ROOT)
       global_ROOT = create_MCTS_root();
     var start_time = new Date().getTime();
-    while ((new Date().getTime() - start_time) < 10 && global_ROOT.total_tries < max_trials)
-      for (var i = 0; i < 100; i++)
-        global_ROOT.choose_child();
+    var temp_count = 0;
+    while ((new Date().getTime() - start_time) < 30 && !stop_choose) {
+      global_ROOT.choose_child();
+      temp_count++;
+    }
+    if (num_choose3 && (temp_count < num_choose3 / 10 || temp_count < num_choose2 / 10 || temp_count < num_choose1 / 10))
+      stop_choose = true;
+    else {
+      num_choose3 = num_choose2;
+      num_choose2 = num_choose1;
+      num_choose1 = temp_count;
+    }
     update_analysis();
   }, 1);
 }
@@ -105,7 +114,7 @@ function new_game(c_id) {
   }
   
   red_turn_global = true;
-  
+  num_choose1 = num_choose2 = num_choose3 = lnc1 = lnc2 = lnc3 = stop_choose = false;
   position = "";
   
   save_settings_cookie(cookie_id);
@@ -135,7 +144,7 @@ function new_game_cookie(cookie) {
       board[i][a] = 0;
   }
   red_turn_global = true;
-  
+  num_choose1 = num_choose2 = num_choose3 = lnc1 = lnc2 = lnc3 = stop_choose = false;
   setup_position(position);
     
   global_ROOT = create_MCTS_root();
@@ -374,8 +383,7 @@ function set_turn(turn, col, row) {
   }
   
   monte_carlo_trials *= increasing_factor;
-  if (monte_carlo_trials > max_trials)
-    monte_carlo_trials = max_trials;
+  num_choose1 = num_choose2 = num_choose3 = stop_choose = false;
   
   if (over == -1 && (turn === ai_turn || ai_turn == "both"))
     setTimeout(play_ai_move, 25);
@@ -546,26 +554,41 @@ function MCTS_get_next_root(col) {
 function run_MCTS(times, threshold, callback) {
   if (!global_ROOT)
     global_ROOT = create_MCTS_root();
-  run_MCTS_recursive(times, threshold, 5, 5, callback);
+  run_MCTS_recursive(times, threshold, callback, 0);
 }
 
-function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
-  for (var a = 0; a < times / total_times; a++)
+function run_MCTS_recursive(times, threshold, callback, count) {
+  var start_time = new Date().getTime();
+  var init_times = times;
+  while (times > 0 && (new Date().getTime() - start_time) < 100) {
     global_ROOT.choose_child();
-  draw_hover(most_tried_child(global_ROOT, null).last_move);
-  if (threshold > 0) {
-    var error = get_certainty(global_ROOT);
-    console.log(error);
-    if (global_ROOT.children.length < 2 || error < threshold) {
-      callback();
-      return;
+    times--;
+  }
+  if (count % 20 === 0) {
+    draw_hover(most_tried_child(global_ROOT, null).last_move);
+    if (threshold > 0) {
+      var error = get_certainty(global_ROOT);
+      console.log(error);
+      if (global_ROOT.children.length < 2 || error < threshold) {
+        callback();
+        return;
+      }
     }
   }
-  if (time_on <= 1 || ai_stopped)
+  if (ai_stopped || times <= 0 || stop_choose)
     callback();
-  else setTimeout(function() {
-    run_MCTS_recursive(times, threshold, time_on - 1, total_times, callback);
-  }, 1);
+  else if (lnc3 && (init_times - times < lnc3 / 5 || init_times - times < lnc2 / 5 || init_times - times < lnc1 / 5)) {
+    console.log(init_times - times, lnc3);
+    callback();
+  }
+  else {
+    lnc3 = lnc2;
+    lnc2 = lnc1;
+    lnc1 = init_times - times;
+    setTimeout(function() {
+      run_MCTS_recursive(times, threshold, callback, ++count);
+    }, 1);
+  }
 }
 
 function get_certainty(root) {
@@ -937,7 +960,7 @@ $('#form-new-game').submit(function() {
       break;
     case "play fast":
       smart_simulation = false;
-      monte_carlo_trials = dimensions[0] * dimensions[1];
+      monte_carlo_trials = 0;
       expansion_const = 2;
       certainty_threshold = 1;
       ponder = true;
@@ -953,8 +976,8 @@ $('#form-new-game').submit(function() {
       break;
     case "play fast ++":
       smart_simulation = true;
-      monte_carlo_trials = dimensions[0] * dimensions[1] * 40;
-      expansion_const = 2;
+      monte_carlo_trials = 0;
+      expansion_const = 2.5;
       certainty_threshold = 1;
       ponder = true;
       increasing_factor = 1.08;
@@ -986,16 +1009,16 @@ $('#form-new-game').submit(function() {
     case "good luck":
       smart_simulation = true;
       monte_carlo_trials = 50000;
-      expansion_const = 2;
-      certainty_threshold = 0.1;
+      expansion_const = 2.5;
+      certainty_threshold = 0.05;
       ponder = true;
       increasing_factor = 1.07;
       break;
     case "wreckage":
       smart_simulation = true;
-      monte_carlo_trials = 400000;
-      expansion_const = 2;
-      certainty_threshold = 0.05;
+      monte_carlo_trials = 5000000;
+      expansion_const = 6;
+      certainty_threshold = 0.01;
       ponder = true;
       increasing_factor = 1.07;
       break;
@@ -1006,8 +1029,6 @@ $('#form-new-game').submit(function() {
   
   position = $('input[name="position"]').val();
   monte_carlo_trials = monte_carlo_trials * Math.pow(increasing_factor, position.length);
-  if (monte_carlo_trials > max_trials)
-    monte_carlo_trials = max_trials;
   
   var name = $('input[name="name"]').val();
   over = -1;
