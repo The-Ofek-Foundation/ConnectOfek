@@ -351,7 +351,7 @@ function set_turn(turn, col, row) {
   var mtc = most_tried_child(global_ROOT, null);
   
   if (over == -1 && (turn === ai_turn || ai_turn == "both") && mtc && mtc.last_move)
-    draw_hover(mtc.last_move[0]);
+    draw_hover(mtc.last_move);
   else  draw_board();
   
   over = game_over(board, col, row);
@@ -552,7 +552,7 @@ function run_MCTS(times, threshold, callback) {
 function run_MCTS_recursive(times, threshold, time_on, total_times, callback) {
   for (var a = 0; a < times / total_times; a++)
     global_ROOT.choose_child();
-  draw_hover(most_tried_child(global_ROOT, null).last_move[0]);
+  draw_hover(most_tried_child(global_ROOT, null).last_move);
   if (threshold > 0) {
     var error = get_certainty(global_ROOT);
     console.log(error);
