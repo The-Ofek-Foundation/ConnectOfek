@@ -680,15 +680,14 @@ function game_over(tboard, x, y) {
   
   for (i = x - 3; i <= x + 3; i++) // Horizontal
     if (i >= 0 && i < tboard.length && countConsecutive < 4)
-      if (tboard[i][y] == color)
-        countConsecutive++;
-      else if (tboard[i][y] !== 0) {
-        color = tboard[i][y];
-        countConsecutive = 1;
-      }
-      else	color = 3;
-    else if (countConsecutive == 4)
-      return color;
+      if (tboard[i][y] === 0)
+          color = 3;
+        else if (tboard[i][y] == color)
+          countConsecutive++;
+        else {
+          color = tboard[i][y];
+          countConsecutive = 1;
+        }
   if (countConsecutive == 4)
     return color;
   
@@ -697,13 +696,14 @@ function game_over(tboard, x, y) {
   
   for (a = y - 3; a <= y + 3; a++) // Vertical
     if (a >= 0 && a < tboard[0].length && countConsecutive < 4)
-      if (tboard[x][a] == color)
-        countConsecutive++;
-      else if (tboard[x][a] !== 0) {
-        color = tboard[x][a];
-        countConsecutive = 1;
-      }
-      else	color = 3;
+      if (tboard[x][a] === 0)
+          color = 3;
+        else if (tboard[x][a] == color)
+          countConsecutive++;
+        else {
+          color = tboard[x][a];
+          countConsecutive = 1;
+        }
     else if (countConsecutive == 4)
       return color;
   if (countConsecutive == 4)
@@ -714,13 +714,14 @@ function game_over(tboard, x, y) {
   
   for (i = x - 3, a = y - 3; i <= x + 3; i++, a++) // diagonal 1 topleft - bottomright
     if (a >= 0 && a < tboard[0].length && i >= 0 && i < tboard.length && countConsecutive < 4)
-      if (tboard[i][a] == color)
-        countConsecutive++;
-      else if (tboard[i][a] !== 0) {
-        color = tboard[i][a];
-        countConsecutive = 1;
-      }
-      else	color = 3;
+      if (tboard[i][a] === 0)
+          color = 3;
+        else if (tboard[i][a] == color)
+          countConsecutive++;
+        else {
+          color = tboard[i][a];
+          countConsecutive = 1;
+        }
     else if (countConsecutive == 4)
       return color;
   if (countConsecutive == 4)
@@ -731,13 +732,14 @@ function game_over(tboard, x, y) {
   
   for (i = x - 3, a = y + 3; i <= x + 3; i++, a--) // diagonal 1 topright - bottomleft
     if (a >= 0 && a < tboard[0].length && i >= 0 && i < tboard.length && countConsecutive < 4)
-      if (tboard[i][a] == color)
-        countConsecutive++;
-      else if (tboard[i][a] !== 0) {
-        color = tboard[i][a];
-        countConsecutive = 1;
-      }
-      else	color = 3;
+      if (tboard[i][a] === 0)
+          color = 3;
+        else if (tboard[i][a] == color)
+          countConsecutive++;
+        else {
+          color = tboard[i][a];
+          countConsecutive = 1;
+        }
     else if (countConsecutive == 4)
       return color;
   if (countConsecutive == 4)
@@ -758,13 +760,14 @@ function game_over_full(tboard) {
   for (i = 0; i < tboard.length; i++) {
     for (a = 0; a < tboard[i].length; a++)
       if (countConsecutive < 4)
-        if (tboard[i][a] == color)
+        if (tboard[i][a] === 0)
+          color = 3;
+        else if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] !== 0) {
+        else {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 3;
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -780,13 +783,14 @@ function game_over_full(tboard) {
   for (a = 0; a < tboard[0].length; a++) {
     for (i = 0; i < tboard.length; i++)
       if (countConsecutive < 4)
-        if (tboard[i][a] == color)
+        if (tboard[i][a] === 0)
+          color = 3;
+        else if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] !== 0) {
+        else {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 3;
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -804,13 +808,14 @@ function game_over_full(tboard) {
   for (x = 0; x < tboard.length; x++) {
     for (i = x, a = 0; i < tboard.length && a < tboard[i].length; i++, a++)
       if (countConsecutive < 4)
-        if (tboard[i][a] == color)
+        if (tboard[i][a] === 0)
+          color = 3;
+        else if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] !== 0) {
+        else {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 3;
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -826,13 +831,14 @@ function game_over_full(tboard) {
   for (y = 1; y < tboard[0].length; y++) {
     for (i = 0, a = y; i < tboard.length && a < tboard[i].length; i++, a++)
       if (countConsecutive < 4)
-        if (tboard[i][a] == color)
+        if (tboard[i][a] === 0)
+          color = 3;
+        else if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] !== 0) {
+        else {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 3;
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -848,13 +854,14 @@ function game_over_full(tboard) {
   for (x = 0; x < tboard.length; x++) {
     for (i = x, a = 0; i >= 0 && a < tboard[i].length; i--, a++)
       if (countConsecutive < 4)
-        if (tboard[i][a] == color)
+        if (tboard[i][a] === 0)
+          color = 3;
+        else if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] !== 0) {
+        else {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 3;
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
@@ -870,13 +877,14 @@ function game_over_full(tboard) {
   for (y = 1; y < tboard[0].length; y++) {
     for (i = tboard.length - 1, a = y; i >= 0 && a < tboard[i].length; i--, a++)
       if (countConsecutive < 4)
-        if (tboard[i][a] == color)
+        if (tboard[i][a] === 0)
+          color = 3;
+        else if (tboard[i][a] == color)
           countConsecutive++;
-        else if (tboard[i][a] !== 0) {
+        else {
           color = tboard[i][a];
           countConsecutive = 1;
         }
-        else	color = 3;
       else if (countConsecutive == 4)
         return color;
     if (countConsecutive == 4)
