@@ -678,32 +678,32 @@ function game_over(tboard, x, y) {
   var color = tboard[x][y];
   var i, a;
   
-  for (i = x - 1; i >= 0 && countConsecutive < 4 && tboard[i][y] == color; i--, countConsecutive++);
-  for (i = x + 1; i < tboard.length && countConsecutive < 4 && tboard[i][y] == color; i++, countConsecutive++);
+  for (i = x - 1; countConsecutive < 4 && i >= 0 && tboard[i][y] == color; i--, countConsecutive++);
+  for (i = x + 1; countConsecutive < 4 && i < tboard.length && tboard[i][y] == color; i++, countConsecutive++);
   
   if (countConsecutive == 4)
     return color;
   
   countConsecutive = 1;
   
-  for (a = y - 1; a >= 0 && countConsecutive < 4 && tboard[x][a] == color; a--, countConsecutive++);
-  for (a = y + 1; a < tboard[0].length && countConsecutive < 4 && tboard[x][a] == color; a++, countConsecutive++);
+  for (a = y - 1; countConsecutive < 4 && a >= 0 && tboard[x][a] == color; a--, countConsecutive++);
+  for (a = y + 1; countConsecutive < 4 && a < tboard[0].length && tboard[x][a] == color; a++, countConsecutive++);
   
   if (countConsecutive == 4)
     return color;
   
   countConsecutive = 1;
   
-  for (i = x - 1, a = y - 1; i >= 0 && a >= 0 && countConsecutive < 4 && tboard[i][a] == color; a--, i--, countConsecutive++);
-  for (i = x + 1, a = y + 1; i < tboard.length && a < tboard[0].length && countConsecutive < 4 && tboard[i][a] == color; a++, i++, countConsecutive++);
+  for (i = x - 1, a = y - 1; countConsecutive < 4 && i >= 0 && a >= 0 && tboard[i][a] == color; a--, i--, countConsecutive++);
+  for (i = x + 1, a = y + 1; countConsecutive < 4 && i < tboard.length && a < tboard[0].length && tboard[i][a] == color; a++, i++, countConsecutive++);
   
   if (countConsecutive == 4)
     return color;
   
   countConsecutive = 1;
   
-  for (i = x - 1, a = y + 1; i >= 0 && a < tboard[0].length && countConsecutive < 4 && tboard[i][a] == color; a++, i--, countConsecutive++);
-  for (i = x + 1, a = y - 1; i < tboard.length && a >= 0 && countConsecutive < 4 && tboard[i][a] == color; a--, i++, countConsecutive++);
+  for (i = x - 1, a = y + 1; countConsecutive < 4 && i >= 0 && a < tboard[0].length && tboard[i][a] == color; a++, i--, countConsecutive++);
+  for (i = x + 1, a = y - 1; countConsecutive < 4 && i < tboard.length && a >= 0 && tboard[i][a] == color; a--, i++, countConsecutive++);
   
   if (countConsecutive == 4)
     return color;
