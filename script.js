@@ -8,12 +8,12 @@ var expansion_const = 2.5;
 var ai_turn = false;
 var monte_carlo_trials = 10000;
 var over;
-var ponder, pondering;
+var ponder = true, pondering;
 var certainty_threshold = 0.15;
 var position, cookie_id;
 var ai_stopped = false;
 var smart_simulation = true;
-var increasing_factor = 1.05;
+var increasing_factor = 1.07;
 
 var boardui = document.getElementById("board");
 var brush = boardui.getContext("2d");
