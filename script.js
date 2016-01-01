@@ -979,7 +979,7 @@ $('#form-new-game').submit(function() {
       break;
     case "good luck":
       smart_simulation = true;
-      monte_carlo_trials = 100000;
+      monte_carlo_trials = 150000;
       expansion_const = 5;
       certainty_threshold = 0.05;
       ponder = true;
