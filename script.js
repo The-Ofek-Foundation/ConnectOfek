@@ -390,13 +390,12 @@ function set_turn(turn, col, row) {
 }
 
 function play_move(tboard, col, turn) {
-  var color = turn ? 1:2;
-  for (var a = tboard[col].length - 1; a >= 0; a--)
-    if (tboard[col][a] === 0) {
-      tboard[col][a] = color;
-      return a;
-    }
-  return -1;
+  if (tboard[col][0] !== 0)
+    return -1;
+  var color = turn ? 1:2, row;
+  for (row = tboard[col].length - 1; tboard[col][row] !== 0; row--);
+  tboard[col][row] = color;
+  return row;
 }
 
 $('#board').mousedown(function (e) {
@@ -426,16 +425,13 @@ $('#board').mousemove(function (e) {
 });
 
 function get_winning_move(tboard, turn) {
-  var row;
+  var row, color = turn ? 1:2;
   for (var col = 0; col < tboard.length; col++) {
-    row = play_move(tboard, col, turn);
-    if (row < 0)
+    if (tboard[col][0] !== 0)
       continue;
-    if (game_over(tboard, col, row) != -1) {
-      tboard[col][row] = 0;
+    for (row = tboard[col].length - 1; tboard[col][row] !== 0; row--);
+    if (game_over_color(tboard, col, row, color) != -1)
       return [col, row];
-    }
-    tboard[col][row] = 0;
   }
   return false;
 }
@@ -452,19 +448,13 @@ function MCTS_get_children(state, father) {
   else {
     var nstate = new State(state.board + (win[0] + 1), !state.turn);
     nstate.game_over = true;
-    var node = new MCTS_Node(nstate, father, win[0]);
-    node.misses = 99999999;
-    return [node];
+    return [new MCTS_Node(nstate, father, win[0])];
   }
   if (win)
     return [new MCTS_Node(new State(state.board + (win[0] + 1), !state.turn), father, win[0])];
   
-  var count = 0;
-  var col;
-  for (col = 0; col < tboard.length; col++)
-    if (tboard[col][0] === 0)
-      count++;
-  
+  var col, count = 0;
+
   var children = new Array(count);
   for (col = 0; col < tboard.length; col++)
     if (tboard[col][0] === 0)
@@ -680,32 +670,73 @@ function game_over(tboard, x, y) {
   var color = tboard[x][y];
   var i, a;
   
-  for (i = x - 1; countConsecutive < 4 && i >= 0 && tboard[i][y] == color; i--, countConsecutive++);
-  for (i = x + 1; countConsecutive < 4 && i < tboard.length && tboard[i][y] == color; i++, countConsecutive++);
+  for (i = x - 1; i >= 0 && countConsecutive < 4 && tboard[i][y] == color; i--, countConsecutive++);
+  for (i = x + 1; i < tboard.length && countConsecutive < 4 && tboard[i][y] == color; i++, countConsecutive++);
   
   if (countConsecutive == 4)
     return color;
   
   countConsecutive = 1;
   
-  for (a = y - 1; countConsecutive < 4 && a >= 0 && tboard[x][a] == color; a--, countConsecutive++);
-  for (a = y + 1; countConsecutive < 4 && a < tboard[0].length && tboard[x][a] == color; a++, countConsecutive++);
+  for (a = y - 1; a >= 0 && countConsecutive < 4 && tboard[x][a] == color; a--, countConsecutive++);
+  for (a = y + 1; a < tboard[0].length && countConsecutive < 4 && tboard[x][a] == color; a++, countConsecutive++);
   
   if (countConsecutive == 4)
     return color;
   
   countConsecutive = 1;
   
-  for (i = x - 1, a = y - 1; countConsecutive < 4 && i >= 0 && a >= 0 && tboard[i][a] == color; a--, i--, countConsecutive++);
-  for (i = x + 1, a = y + 1; countConsecutive < 4 && i < tboard.length && a < tboard[0].length && tboard[i][a] == color; a++, i++, countConsecutive++);
+  for (i = x - 1, a = y - 1; i >= 0 && a >= 0 && countConsecutive < 4 && tboard[i][a] == color; a--, i--, countConsecutive++);
+  for (i = x + 1, a = y + 1; i < tboard.length && a < tboard[0].length && countConsecutive < 4 && tboard[i][a] == color; a++, i++, countConsecutive++);
   
   if (countConsecutive == 4)
     return color;
   
   countConsecutive = 1;
   
-  for (i = x - 1, a = y + 1; countConsecutive < 4 && i >= 0 && a < tboard[0].length && tboard[i][a] == color; a++, i--, countConsecutive++);
-  for (i = x + 1, a = y - 1; countConsecutive < 4 && i < tboard.length && a >= 0 && tboard[i][a] == color; a--, i++, countConsecutive++);
+  for (i = x - 1, a = y + 1; i >= 0 && a < tboard[0].length && countConsecutive < 4 && tboard[i][a] == color; a++, i--, countConsecutive++);
+  for (i = x + 1, a = y - 1; i < tboard.length && a >= 0 && countConsecutive < 4 && tboard[i][a] == color; a--, i++, countConsecutive++);
+  
+  if (countConsecutive == 4)
+    return color;
+  
+  for (i = 0; i < tboard.length; i++)
+    if (tboard[i][0] === 0)
+      return -1;
+  
+  return 0;
+}
+
+function game_over_color(tboard, x, y, color) {
+  var countConsecutive = 1;
+  var i, a;
+  
+  for (i = x - 1; i >= 0 && countConsecutive < 4 && tboard[i][y] == color; i--, countConsecutive++);
+  for (i = x + 1; i < tboard.length && countConsecutive < 4 && tboard[i][y] == color; i++, countConsecutive++);
+  
+  if (countConsecutive == 4)
+    return color;
+  
+  countConsecutive = 1;
+  
+  for (a = y - 1; a >= 0 && countConsecutive < 4 && tboard[x][a] == color; a--, countConsecutive++);
+  for (a = y + 1; a < tboard[0].length && countConsecutive < 4 && tboard[x][a] == color; a++, countConsecutive++);
+  
+  if (countConsecutive == 4)
+    return color;
+  
+  countConsecutive = 1;
+  
+  for (i = x - 1, a = y - 1; i >= 0 && a >= 0 && countConsecutive < 4 && tboard[i][a] == color; a--, i--, countConsecutive++);
+  for (i = x + 1, a = y + 1; i < tboard.length && a < tboard[0].length && countConsecutive < 4 && tboard[i][a] == color; a++, i++, countConsecutive++);
+  
+  if (countConsecutive == 4)
+    return color;
+  
+  countConsecutive = 1;
+  
+  for (i = x - 1, a = y + 1; i >= 0 && a < tboard[0].length && countConsecutive < 4 && tboard[i][a] == color; a++, i--, countConsecutive++);
+  for (i = x + 1, a = y - 1; i < tboard.length && a >= 0 && countConsecutive < 4 && tboard[i][a] == color; a--, i++, countConsecutive++);
   
   if (countConsecutive == 4)
     return color;
@@ -1120,19 +1151,7 @@ MCTS_Node.prototype.choose_child = function() {
     }
     else {
       var best_child = this.children[0], best_potential = MCTS_child_potential(this.children[0], this.total_tries), potential;
-      if (this.children[0].misses == 100000000) {
-        this.hits = 99999999;
-        if (this.parent)
-          this.parent.back_propogate(-1);
-        return;
-      }
       for (i = 1; i < this.children.length; i++) {
-        if (this.children[i].misses == 100000000) {
-          this.hits = 99999999;
-          if (this.parent)
-            this.parent.back_propogate(-1);
-          return;
-        }
         potential = MCTS_child_potential(this.children[i], this.total_tries);
         if (potential > best_potential) {
           best_potential = potential;
@@ -1149,13 +1168,15 @@ MCTS_Node.prototype.run_simulation = function() {
 };
 
 MCTS_Node.prototype.back_propogate = function(simulation) {
-  if (simulation == 1)
+  if (simulation > 0)
     this.hits++;
-  else if (simulation == -1)
+  else if (simulation < 0)
     this.misses++;
   this.total_tries++;
   if (this.parent) {
-    this.parent.back_propogate(-simulation);
+    if (this.parent.State.turn === this.State.turn)
+      this.parent.back_propogate(simulation);
+    else this.parent.back_propogate(-simulation);
   }
 };
 
@@ -1175,7 +1196,7 @@ function efficiency_test() {
 function speed_test() {
   global_ROOT = create_MCTS_root();
   var total_trials, start = new Date().getTime();
-  for (total_trials = 0; total_trials < 300000; total_trials++)
+  for (total_trials = 0; total_trials < 500000; total_trials++)
     global_ROOT.choose_child();
   console.log((new Date().getTime() - start) / 1E3);
 }
