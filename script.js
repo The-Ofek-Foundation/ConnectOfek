@@ -454,6 +454,10 @@ function MCTS_get_children(state, father) {
     return [new MCTS_Node(new State(state.board + (win[0] + 1), !state.turn), father, win[0])];
   
   var col, count = 0;
+  
+  for (col = 0; col < tboard.length; col++)
+    if (tboard[col][0] === 0)
+      count++;
 
   var children = new Array(count);
   for (col = 0; col < tboard.length; col++)
