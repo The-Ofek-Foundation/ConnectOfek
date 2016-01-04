@@ -20,8 +20,8 @@ var brush = boardui.getContext("2d");
 var num_choose1, num_choose2, num_choose3, lnc1, lnc2, lnc3, stop_choose;
 
 $(document).ready(function() {
-  docwidth = $(document).outerWidth(true);
-  docheight = $(document).outerHeight(true);
+  docwidth = $(window).outerWidth(true);
+  docheight = $(window).outerHeight(true);
   
   $('#board').width(docwidth).height(docheight);
   boardui.setAttribute('width', docwidth);
@@ -35,6 +35,12 @@ $(document).ready(function() {
   new_game(window.location.hash);
   
   $('input[name="name"]').val(new_cookie_id());
+});
+
+$(window).resize(function() {
+  docwidth = $(window).outerWidth(true);
+  docheight = $(window).outerHeight(true);
+  $('#board').width(docwidth).height(docheight);
 });
 
 function start_ponder() {
