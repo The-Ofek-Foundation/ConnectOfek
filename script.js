@@ -41,6 +41,11 @@ $(window).resize(function() {
   docwidth = $(window).outerWidth(true);
   docheight = $(window).outerHeight(true);
   $('#board').width(docwidth).height(docheight);
+  
+  $('#new-game-btn').css('top', (docheight - $('#new-game-btn').height()) / 2);
+  $('#new-game-btn').css('left', (docwidth - $('#new-game-btn').outerWidth()) / 2);
+  $('#new-game-menu').css('top', (docheight - $('#new-game-menu').outerHeight()) / 2);
+  $('#new-game-menu').css('left', (docwidth - $('#new-game-menu').outerWidth()) / 2);
 });
 
 function start_ponder() {
@@ -932,7 +937,7 @@ $('#form-new-game').submit(function() {
   dimensions[0] = parseInt($('input[name="d_width"]').val());
   dimensions[1] = parseInt($('input[name="d_height"]').val());
   
-  switch ($('input[name="ai-turn"]').val().toLowerCase()) {
+  switch ($('select[name="ai-turn"]').val()) {
     case "first":
       ai_turn = true;
       break;
@@ -947,7 +952,7 @@ $('#form-new-game').submit(function() {
   
   var allow_ponder = $('input[name="allow-ponder"]').prop('checked');
   
-  switch ($('input[name="ai-diff"]').val().toLowerCase()) {
+  switch ($('select[name="ai-diff"]').val().toLowerCase()) {
     case "custom":
       smart_simulation = $('input[name="smart-simulation"]').prop('checked');
       monte_carlo_trials = $('input[name="mc-trials"]').val();
