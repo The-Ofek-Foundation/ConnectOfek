@@ -39,29 +39,27 @@
       <input type="checkbox" id="allow-ponder" name="allow-ponder" checked>
       <br />
       AI Turn:
-      <input list="ai-turn" name="ai-turn" value="Second">
-      <datalist id="ai-turn">
-        <option value="None"></option>
-        <option value="First"></option>
-        <option value="Second"></option>
-        <option value="Both"></option>
-      </datalist>
+      <select name="ai-turn" required>
+        <option value="none">None</option>
+        <option value="first">First</option>
+        <option value="second" selected>Second</option>
+        <option value="both">Both</option>
+      </select>
       <br />
       AI Difficulty:
-      <input list="ai-diff" name="ai-diff" value="Custom">
-      <datalist id="ai-diff">
-        <option value="Custom">Set values below</option>
-        <option value="Stupid"></option>
-        <option value="ehh"></option>
-        <option value="Play Fast">Must allow pondering</option>
-        <option value="Normal"></option>
-        <option value="Play Fast ++">Must allow pondering</option>
-        <option value="Win Fast">Num Trials increases exponentially</option>
-        <option value="Hard"></option>
-        <option value="Very Hard"></option>
-        <option value="Good Luck"></option>
-        <option value="Wreckage"></option>        
-      </datalist>
+      <select name="ai-diff" required>
+        <option value="Custom" selecte>Custom (choose values below)</option>
+        <option value="Stupid">Stupid</option>
+        <option value="ehh">ehh</option>
+        <option value="Play Fast">Play Fast (must allow pondering)</option>
+        <option value="Normal">Normal</option>
+        <option value="Play Fast ++">Play Fast++ (must allow pondering</option>
+        <option value="Win Fast">Win Fast (num trial increases exponentially)</option>
+        <option value="Hard">Hard</option>
+        <option value="Very Hard">Very Hard</option>
+        <option value="Good Luck">Good Luck</option>
+        <option value="Wreckage">Wreckage (be warned)</option>        
+      </select>
       <br />
       Ponder? 
       <input type="checkbox" id="ai-ponder" name="ai-ponder" checked>
