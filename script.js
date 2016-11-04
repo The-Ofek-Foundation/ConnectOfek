@@ -27,6 +27,7 @@ function pageReady() {
 	boardui.setAttribute('height', docHeight);
 
 	$("#form-new-game").height(docHeight * 0.6);
+	resizeGameSettingsTable();
 
 	newGame(window.location.hash);
 
@@ -49,6 +50,7 @@ $(window).resize(function() {
 
 	$("#form-new-game").height(docHeight * 0.6);
 	adjustButtons();
+	resizeGameSettingsTable();
 
 	drawBoard();
 });
