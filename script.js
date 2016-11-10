@@ -418,10 +418,11 @@ function setTurn(turn, col, row) {
 	else drawBoard();
 
 	over = gameOver(board, col, row);
+	console.log(over);
 
 	saveSettingsCookie(cookieId);
 
-	if (over != -1) {
+	if (over !== -1) {
 		setTimeout(function () {
 			switch (over) {
 				case 0:
@@ -437,13 +438,14 @@ function setTurn(turn, col, row) {
 		}, 100);
 		stopPonder();
 		setCookie(cookieId, "", -1);
+	} else {
+		monteCarloTrials *= increasingFactor;
+		numChoose1 = numChoose2 = numChoose3 = stopChoose = false;
+
+		if (turn === (aiTurn === 'first') || aiTurn == "both")
+			setTimeout(playAiMove, 25);
 	}
 
-	monteCarloTrials *= increasingFactor;
-	numChoose1 = numChoose2 = numChoose3 = stopChoose = false;
-
-	if (over == -1 && (turn === (aiTurn === 'first') || aiTurn == "both"))
-		setTimeout(playAiMove, 25);
 }
 
 function playMove(tboard, col, turn) {
@@ -644,7 +646,10 @@ function runMCTSRecursive(times, threshold, callback, count) {
 		times--;
 	}
 	if (count % 20 === 0) {
-		drawHover(mostTriedChild(globalRoot, null).lastMove);
+		if (globalRoot.children.length === 0) {
+			callback();
+			return;
+		} else drawHover(mostTriedChild(globalRoot, null).lastMove);
 		if (threshold > 0) {
 			var error = getCertainty(globalRoot);
 			console.log(error);
