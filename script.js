@@ -19,27 +19,27 @@ var brush = boardui.getContext("2d");
 var numChoose1, numChoose2, numChoose3, lnc1, lnc2, lnc3, stopChoose;
 
 function pageReady() {
-	docWidth = $("#content-wrapper").outerWidth(true);
-	docHeight = $("#content-wrapper").outerHeight(true);
+	docWidth = getElemWidth(document.getElementById('content-wrapper'));
+	docHeight = getElemHeight(document.getElementById('content-wrapper'));
 
-	$('#board').width(docWidth).height(docHeight);
+	setElemWidth(boardui, docWidth);
+	setElemHeight(boardui, docHeight);
 	boardui.setAttribute('width', docWidth);
 	boardui.setAttribute('height', docHeight);
 
-	$("#form-new-game").height(docHeight * 0.6);
 	resizeGameSettingsTable();
 
 	newGame(window.location.hash);
 
-	$('input[name="name"]').val(newCookieId());
+	setInputValue('name', newCookieId());
 };
 
-$(window).resize(function() {
+window.addEventListener('resize', function() {
 	$("#content-wrapper").outerWidth($(window).outerWidth(true));
 	$("#content-wrapper").outerHeight($(window).outerHeight(true) - $("#content-wrapper").position().top);
 
-	docWidth = $("#content-wrapper").outerWidth(true);
-	docHeight = $("#content-wrapper").outerHeight(true);
+	docWidth = getElemWidth(document.getElementById('content-wrapper'));
+	docHeight = getElemHeight(document.getElementById('content-wrapper'));
 
 	$('#board').width(docWidth).height(docHeight);
 	boardui.setAttribute('width', docWidth);
