@@ -418,7 +418,6 @@ function setTurn(turn, col, row) {
 	else drawBoard();
 
 	over = gameOver(board, col, row);
-	console.log(over);
 
 	saveSettingsCookie(cookieId);
 
