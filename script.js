@@ -14,13 +14,13 @@ var aiStopped = false;
 var smartSimulation;
 var increasingFactor;
 
-var boardui = document.getElementById("board");
+var boardui = getElemId("board");
 var brush = boardui.getContext("2d");
 var numChoose1, numChoose2, numChoose3, lnc1, lnc2, lnc3, stopChoose;
 
 function pageReady() {
-	docWidth = getElemWidth(document.getElementById('content-wrapper'));
-	docHeight = getElemHeight(document.getElementById('content-wrapper'));
+	docWidth = getElemWidth(getElemId('content-wrapper'));
+	docHeight = getElemHeight(getElemId('content-wrapper'));
 
 	setElemWidth(boardui, docWidth);
 	setElemHeight(boardui, docHeight);
@@ -34,12 +34,9 @@ function pageReady() {
 	setInputValue('name', newCookieId());
 };
 
-window.addEventListener('resize', function() {
-	$("#content-wrapper").outerWidth($(window).outerWidth(true));
-	$("#content-wrapper").outerHeight($(window).outerHeight(true) - $("#content-wrapper").position().top);
-
-	docWidth = getElemWidth(document.getElementById('content-wrapper'));
-	docHeight = getElemHeight(document.getElementById('content-wrapper'));
+function onResize() {
+	docWidth = getElemWidth(getElemId('content-wrapper'));
+	docHeight = getElemHeight(getElemId('content-wrapper'));
 
 	$('#board').width(docWidth).height(docHeight);
 	boardui.setAttribute('width', docWidth);
@@ -53,7 +50,7 @@ window.addEventListener('resize', function() {
 	resizeGameSettingsTable();
 
 	drawBoard();
-});
+}
 
 function startPonder() {
 	pondering = setInterval(function() {
