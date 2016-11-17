@@ -30,8 +30,8 @@ function pageReady() {
 }
 
 function resizeBoard() {
-	docWidth = getElemWidth(getElemId('content-wrapper'));
-	docHeight = getElemHeight(getElemId('content-wrapper'));
+	docWidth = getElemWidth(contentWrapper);
+	docHeight = getElemHeight(contentWrapper);
 
 	setElemWidth(boardui, docWidth);
 	setElemHeight(boardui, docHeight);
@@ -75,7 +75,6 @@ function stopPonder() {
 }
 
 function adjustButtons() {
-	setElemStyle(getElemQuery('#footer button'), 'font-size', discHeight / 4 + "px");
 	setElemHeight(getElemId('footer'), discHeight / 2);
 	setElemStyle(getElemQuery('#footer #anal'), 'line-height', discHeight / 2 + "px");
 	setElemStyle(getElemQuery('#footer #num-trials'), 'line-height',
@@ -980,10 +979,6 @@ function identicalBoards(board1, board2) {
 	return true;
 }
 
-function showSettingsForm() {
-	$('#game-settings-menu').animate({opacity: 0.9}, "slow").css('z-index', 100);
-}
-
 getElemId('new-game').addEventListener('click', function () {
 	newGame(getInputValue('name'));
 });
@@ -991,12 +986,12 @@ getElemId('new-game').addEventListener('click', function () {
 getElemId('settings').addEventListener('click', showSettingsForm);
 
 function getNewSettings() {
-	let settings = {};
+	var settings = {};
 
 	settings['dimensions'] = [getInputValue('d-width'), getInputValue('d-height')];
 	settings['aiTurn'] = getInputValue('ai-turn');
 
-	let allowPonder = getInputValue('allow-ponder');
+	var allowPonder = getInputValue('allow-ponder');
 	switch (getInputValue('ai-diff').toLowerCase()) {
 		case "custom":
 			settings['smartSimulation'] = getInputValue('smart-simulation');
@@ -1133,10 +1128,6 @@ getElemId('cancel').addEventListener('click', function() {
 		setElemStyle(gameSettingsMenu, 'z-index', -1);
 	});
 });
-
-function hideSettingsForm(callback) {
-	$(gameSettingsMenu).animate({opacity: 0}, "slow", callback);
-}
 
 getElemId('back').addEventListener('click', function () {
 	if (aiTurn === 'first' || aiTurn === 'second') {
