@@ -1176,13 +1176,17 @@ class MCTSNode {
 		this.hits = 0;
 		this.misses = 0;
 		this.totalTries = 0;
+		this.countUnexplored = 0;
 	}
 
 	chooseChild(board) {
 		if (this.lastMove !== '')
 			board += this.lastMove + 1;
-		if (typeof this.children === 'undefined')
+		if (typeof this.children === 'undefined') {
 			this.children = MCTSGetChildren(this, board);
+			if (typeof this.children !== 'undefined')
+				this.countUnexplored = this.children.length;
+		}
 		if (typeof this.gameOver !== 'undefined') // next move wins
 			this.backPropogate(1);
 		else if (this.children.length === 0) {
@@ -1192,17 +1196,15 @@ class MCTSNode {
 			this.backPropogate(0);
 		} else {
 			var i;
-			var countUnexplored = 0;
-			for (i = 0; i < this.children.length; i++)
-				if (this.children[i].totalTries === 0)
-					countUnexplored++;
+			var unexplored = this.countUnexplored;
 
-			if (countUnexplored > 0) {
-				var ran = Math.floor(Math.random() * countUnexplored);
+			if (unexplored > 0) {
+				this.countUnexplored--;
+				var ran = Math.floor(Math.random() * unexplored);
 				for (i = 0; i < this.children.length; i++)
 					if (this.children[i].totalTries === 0) {
-						countUnexplored--;
-						if (countUnexplored === 0) {
+						unexplored--;
+						if (unexplored === 0) {
 							this.children[i].runSimulation(board);
 							return;
 						}
