@@ -1203,11 +1203,11 @@ class MCTSNode {
 				var ran = Math.floor(Math.random() * unexplored);
 				for (i = 0; i < this.children.length; i++)
 					if (this.children[i].totalTries === 0) {
-						unexplored--;
-						if (unexplored === 0) {
+						if (ran === 0) {
 							this.children[i].runSimulation(board);
 							return;
 						}
+						ran--;
 					}
 			} else {
 				var bestChild = this.children[0], bestPotential = MCTSChildPotential(this.children[0], this.totalTries), potential;
