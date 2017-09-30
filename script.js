@@ -22,7 +22,7 @@ var gameSettingsMenu = getElemId('game-settings-menu');
 
 function pageReady() {
 	resizeBoard();
-	setTimeout(resizeGameSettingsTable, 0);
+	setTimeout(resizeSettingsTable, 0);
 
 	newGame(window.location.hash);
 
@@ -39,7 +39,7 @@ function resizeBoard() {
 	boardui.setAttribute('height', docHeight);
 
 	adjustButtons();
-	resizeGameSettingsTable();
+	resizeSettingsTable();
 }
 
 function onResize() {
@@ -211,6 +211,7 @@ function populateSettingsForm(settings) {
 	setInputValue('mc-expansion', settings.expansionConstant);
 	setInputValue('mc-certainty', (1 - settings.certaintyThreshold) * 100);
 	setInputValue('ai-ponder', settings.ponder);
+	setInputValue('name', newCookieId());
 }
 
 function getSettingsDict() {
@@ -1164,6 +1165,7 @@ document.addEventListener('keypress', function (event) {
 			break;
 		case 110: case 78: // n
 			newGame(getInputValue('name'));
+			setInputValue('name', newCookieId());
 			break;
 	}
 });
