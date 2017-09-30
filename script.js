@@ -101,6 +101,10 @@ function resultCertainty(root) {
 }
 
 function newGame(cId) {
+
+	if (cId === undefined)
+		cId = newCookieId();
+
 	cookieId = cId.replace(/#/g, "");
 
 	if (cookieId.length === 0)
