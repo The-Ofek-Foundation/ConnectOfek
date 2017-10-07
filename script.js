@@ -196,6 +196,7 @@ function newCookieId() {
 }
 
 function getSettings() {
+	gameSettings.getOrSet('difficulty', 'Normal');
 	ponder = gameSettings.getOrSet('ponder', false);
 	aiTurn = gameSettings.getOrSet('aiTurn', 'second');
 	dimensions = gameSettings.getOrSet('dimensions', [7, 6]);
@@ -207,6 +208,7 @@ function getSettings() {
 }
 
 function populateSettingsForm(settings) {
+	setInputValue('ai-diff', settings.difficulty);
 	setInputValue('d-width', settings.dimensions[0]);
 	setInputValue('d-height', settings.dimensions[1]);
 	setInputValue('ai-turn', settings.aiTurn);
@@ -997,7 +999,8 @@ function getNewSettings() {
 	settings['aiTurn'] = getInputValue('ai-turn');
 
 	var allowPonder = getInputValue('allow-ponder');
-	switch (getInputValue('ai-diff').toLowerCase()) {
+	settings['difficulty'] = getInputValue('ai-diff');
+	switch (settings['difficulty'].toLowerCase()) {
 		case "custom":
 			settings['smartSimulation'] = getInputValue('smart-simulation');
 			settings['monteCarloTrials'] = getInputValue('mc-trials');
