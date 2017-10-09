@@ -19,6 +19,7 @@ var brush = boardui.getContext("2d");
 var numChoose1, numChoose2, numChoose3, lnc1, lnc2, lnc3, stopChoose;
 var analElem = getElemId('anal'), numTrialsElem = getElemId('num-trials');
 var gameSettingsMenu = getElemId('settings-menu');
+var aiIdGlobal = 0;
 
 function pageReady() {
 	resizeBoard();
@@ -492,9 +493,9 @@ boardui.addEventListener('mousemove', function (e) {
 	drawHover(col);
 });
 
-function getWinningMove(tboard, turn, lower, upper) {
+function getWinningMove(tboard, turn) {
 	var row, color = turn ? 1:2;
-	for (var col = lower; col <= upper; col++) {
+	for (var col = 0; col < tboard.length; col++) {
 		if (tboard[col][0] !== 0)
 			continue;
 		for (row = tboard[col].length - 1; tboard[col][row] !== 0; row--);
@@ -504,36 +505,7 @@ function getWinningMove(tboard, turn, lower, upper) {
 	return [-1, -1];
 }
 
-function cGetWinningMove(tboard, turn, lower, upper) {
-	var row, color = turn ? 1:2, c = 0;
-	for (var col = 0; col < tboard.length; col++) {
-		if (tboard[col][0] !== 0)
-			continue;
-		c++;
-		if (col < lower || col > upper)
-			continue;
-		for (row = tboard[col].length - 1; tboard[col][row] !== 0; row--);
-		if (gameOverColor(tboard, col, row, color) != -1)
-			return [col, row];
-	}
-	return [false, c];
-}
-function aGetWinningMove(tboard, turn, lower, upper, c) {
-	var row, color = turn ? 1:2, a = new Array(c);
-	for (var col = 0; col < tboard.length; col++) {
-		if (tboard[col][0] !== 0)
-			continue;
-		a[--c] = col + 1;
-		if (col < lower || col > upper)
-			continue;
-		for (row = tboard[col].length - 1; tboard[col][row] !== 0; row--);
-		if (gameOverColor(tboard, col, row, color) != -1)
-			return [col, row];
-	}
-	return [false, a];
-}
-
-function cGetWinningMoveO(tboard, turn) {
+function cGetWinningMove(tboard, turn) {
 	var row, color = turn ? 1:2, c = 0;
 	for (var col = 0; col < tboard.length; col++) {
 		if (tboard[col][0] !== 0)
@@ -545,7 +517,7 @@ function cGetWinningMoveO(tboard, turn) {
 	}
 	return [false, c];
 }
-function aGetWinningMoveO(tboard, turn, c) {
+function aGetWinningMove(tboard, turn, c) {
 	var row, color = turn ? 1:2, a = new Array(c);
 	for (var col = 0; col < tboard.length; col++) {
 		if (tboard[col][0] !== 0)
@@ -566,18 +538,9 @@ function MCTSGetChildren(father, board) {
 
 	// win[1] stores all possible moves
 
-	var lower, upper;
-	if (father.parent === null || father.parent.lastMove === -1) {
-		lower = 0;
-		upper = dimensions[0] - 1;
-	} else {
-		lower = Math.min(father.lastMove, father.parent.lastMove) - 3;
-		upper = Math.max(father.lastMove, father.parent.lastMove) + 3;
-	}
-
-	var win = cGetWinningMove(tboard, father.turn, lower, upper);
+	var win = cGetWinningMove(tboard, father.turn);
 	if (win[0] === false)
-		win = aGetWinningMove(tboard, !father.turn, lower, upper, win[1]);
+		win = aGetWinningMove(tboard, !father.turn, win[1]);
 	else {
 		father.gameOver = win[0];
 		return;
@@ -635,22 +598,11 @@ function MCTSSimulateSmart(board, gTurn, gOver) {
 	var tboard = setupBoard(board);
 
 	var lastMove = [-1, -1], turn = gTurn, done = gameOverFull(tboard);
-	var row, col, lower, upper;
-	var lc1 = -1, lc2 = -1; // last col 1, last col 2
+	var row, col;
 	while (done === -1) {
-		if (lc2 === -1) {
-			lower = 0;
-			upper = dimensions[0] - 1;
-		} else {
-			lower = Math.min(lc1, lc2) - 3;
-			upper = Math.max(lc1, lc2) + 3;
-			if (lower < 0) lower = 0;
-			if (upper > dimensions[0] - 1)
-				upper = dimensions[0] - 1;
-		}
-		lastMove = getWinningMove(tboard, turn, lower, upper);
+		lastMove = getWinningMove(tboard, turn);
 		if (lastMove[0] === -1)
-			lastMove = getWinningMove(tboard, !turn, lower, upper);
+			lastMove = getWinningMove(tboard, !turn);
 		else {
 			done = turn ? 1:2;
 			break;
@@ -667,8 +619,6 @@ function MCTSSimulateSmart(board, gTurn, gOver) {
 		}
 		done = gameOver(tboard, col, row);
 		turn = !turn;
-		lc2 = lc1;
-		lc1 = col;
 	}
 
 	if (done === 0)
@@ -691,13 +641,15 @@ function MCTSGetNextRoot(col) {
 	return null;
 }
 
-function runMCTS(times, threshold, callback) {
+function runMCTS(times, threshold, callback, aiId) {
 	if (!globalRoot)
 		globalRoot = createMCTSRoot();
-	runMCTSRecursive(times, threshold, callback, 0);
+	runMCTSRecursive(times, threshold, callback, 0, aiId);
 }
 
-function runMCTSRecursive(times, threshold, callback, count) {
+function runMCTSRecursive(times, threshold, callback, count, aiId) {
+	if (aiId !== aiIdGlobal)
+		return;
 	var startTime = new Date().getTime();
 	var initTimes = times;
 	if (times === 0 && globalRoot.totalTries < 5E3)
@@ -731,7 +683,7 @@ function runMCTSRecursive(times, threshold, callback, count) {
 		lnc2 = lnc1;
 		lnc1 = initTimes - times;
 		setTimeout(function() {
-			runMCTSRecursive(times, threshold, callback, ++count);
+			runMCTSRecursive(times, threshold, callback, ++count, aiId);
 		}, 1);
 	}
 }
@@ -796,7 +748,7 @@ function getBestMoveMCTS() {
 function playAiMove() {
 	aiStopped = false;
 	if (!globalRoot || globalRoot.totalTries < monteCarloTrials && certaintyThreshold < 1 && !(globalRoot.children && globalRoot.children.length == 1))
-		runMCTS(monteCarloTrials - globalRoot.totalTries, certaintyThreshold, fpaim);
+		runMCTS(monteCarloTrials - globalRoot.totalTries, certaintyThreshold, fpaim, ++aiIdGlobal);
 	else fpaim();
 }
 
@@ -1217,6 +1169,7 @@ getElemId('stop-ai').addEventListener('click', function () {
 	aiStopped = true;
 	aiTurn = "none";
 	saveSettingsCookie(cookieId);
+	stopPonder();
 });
 
 getElemId('start-ai').addEventListener('click', function () {
