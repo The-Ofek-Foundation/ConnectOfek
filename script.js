@@ -733,14 +733,15 @@ function gameMiddle(b2d) {
 }
 
 function MctsGetChildren(father, tboard, b2d) {
-	if (gameTied(b2d)) {
-		father.gameOver = -2;
-		return [];
-	}
 
 	// win[1] stores all possible moves
 
 	var win = cGetWinningMove(tboard, b2d, father.turn);
+	if (win[1] === 0) { // Game tied
+		father.gameOver = -2;
+		return [];
+	}
+
 	if (win[0] === false)
 		win = aGetWinningMove(tboard, b2d, !father.turn, win[1]);
 	else {
