@@ -63,7 +63,7 @@ function startPonder() {
 			globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
 			tempCount++;
 		}
-		if (numChoose3 && (tempCount < numChoose3 / 5 || tempCount < numChoose2 / 5 || tempCount < numChoose1 / 5))
+		if (numChoose3 && globalRoot.totalTries > 2e6 && (tempCount < numChoose3 / 5 || tempCount < numChoose2 / 5 || tempCount < numChoose1 / 5))
 			stopChoose = true;
 		else {
 			numChoose3 = numChoose2;
@@ -738,10 +738,6 @@ function MctsGetChildren(father, tboard, b2d) {
 		return [];
 	}
 
-	// tboard = boardCopy(tboard);
-
-	// console.log(b2d, tboard);
-
 	// win[1] stores all possible moves
 
 	var win = cGetWinningMove(tboard, b2d, father.turn);
@@ -758,12 +754,12 @@ function MctsGetChildren(father, tboard, b2d) {
 		var children;
 		if (b2d[dimensions[0] / 2 | 0] === -1)
 			children = new Array(dimensions[0] / 2 | 0);
-		else if (b2d[dimensions[0] / 2 | 0] === dimensions[1] - 1
+		else if ((b2d[dimensions[0] / 2 | 0] === dimensions[1] - 1
+			|| b2d[dimensions[0] / 2 | 0] === dimensions[1] - 5)
 			&& monteCarloTrials > 1000)
 			return [
 				new MctsNode(!father.turn, father, dimensions[0] / 2 | 0),
 				new MctsNode(!father.turn, father, 0),
-				new MctsNode(!father.turn, father, 1)
 			];
 		else children = new Array(1 + dimensions[0] / 2 | 0);
 		for (var i = 0; i < children.length; i++)
@@ -775,14 +771,6 @@ function MctsGetChildren(father, tboard, b2d) {
 	var children = new Array(win[1].length);
 	for (i = 0; i < win[1].length; i++)
 		children[i] = new MctsNode(!father.turn, father, win[1][i] - 1);
-
-	// if (/^4*$/.test(board))
-	// 	for (i = 0; i < children.length - 1; i++)
-	// 		for (a = i + 1; a < children.length; a++)
-	// 			if (identicalBoards(setupBoard(board + (children[i].lastMove + 1)), setupBoard(board + (children[a].lastMove+1)))) {
-	// 				children.splice(a, 1);
-	// 				a--;
-	// 			}
 
 	return children;
 }
@@ -827,13 +815,11 @@ function MctsSimulateSmart(father, tboard, b2d, gTurn) {
 	}
 
 	while (done === -1) {
-		// console.log(boardCopy(tboard));
 		col = getWinningMove(tboard, b2d, turn);
 		if (col === -1)
 			col = getWinningMove(tboard, b2d, !turn);
 		else {
 			done = turn ? 1:2;
-			// console.log(turn, 'wins', col);
 			break;
 		}
 
@@ -847,10 +833,8 @@ function MctsSimulateSmart(father, tboard, b2d, gTurn) {
 
 		if (b2d[col] === -1) {
 			colsLeft--;
-			if (colsLeft === 0) {
-				// console.log('tie');
+			if (colsLeft === 0)
 				return 0;
-			}
 		}
 
 		turn = !turn;
@@ -894,7 +878,8 @@ function runMctsRecursive(times, threshold, callback, count, aiId) {
 	}
 	if (count % 20 === 0) {
 		if (globalRoot.children.length === 0) {
-			callback();
+			if (aiId === aiIdGlobal)
+				callback();
 			return;
 		} else drawHover(mostTriedChild(globalRoot, null).lastMove);
 		if (threshold > 0) {
@@ -906,11 +891,12 @@ function runMctsRecursive(times, threshold, callback, count, aiId) {
 			}
 		}
 	}
-	if (aiStopped || times <= 0 || stopChoose)
-		callback();
-	else if (lnc3 && (initTimes - times < lnc3 / 5 || initTimes - times < lnc2 / 5 || initTimes - times < lnc1 / 5)) {
-		console.log(initTimes - times, lnc3);
-		callback();
+	if (aiStopped || times <= 0 || stopChoose) {
+		if (aiId === aiIdGlobal)
+			callback();
+	} else if (lnc3 && globalRoot.totalTries > 2e6 && (initTimes - times < lnc3 / 5 || initTimes - times < lnc2 / 5 || initTimes - times < lnc1 / 5)) {
+		if (aiId === aiIdGlobal)
+			callback();
 	} else {
 		lnc3 = lnc2;
 		lnc2 = lnc1;
@@ -980,12 +966,13 @@ function getBestMoveMcts() {
 
 function playAiMove() {
 	aiStopped = false;
-	if (!globalRoot || globalRoot.totalTries < monteCarloTrials && certaintyThreshold < 1 && !(globalRoot.children && globalRoot.children.length == 1))
-		runMcts(monteCarloTrials - globalRoot.totalTries, certaintyThreshold, fpaim, ++aiIdGlobal);
+	if (!globalRoot || certaintyThreshold < 1 && !(globalRoot.children && globalRoot.children.length == 1))
+		runMcts(monteCarloTrials - globalRoot.totalTries / 2, certaintyThreshold, fpaim, aiIdGlobal);
 	else fpaim();
 }
 
 function fpaim() {
+	aiIdGlobal++;
 	var bestCol = getBestMoveMcts();
 	var gOver = playMoveGlobal(board, bestCol, redTurnGlobal,
 		winHelperGlobal, board2dGlobal);
@@ -1299,17 +1286,17 @@ function getNewSettings() {
 			break;
 		case "win fast":
 			settings['smartSimulation'] = true;
-			settings['monteCarloTrials'] = 500;
+			settings['monteCarloTrials'] = 7;
 			settings['expansionConstant'] = 2;
-			settings['certaintyThreshold'] = 0.25;
+			settings['certaintyThreshold'] = 0.1;
 			settings['ponder'] = false;
-			settings['increasingFactor'] = 1.3;
+			settings['increasingFactor'] = 1.8;
 			break;
 		case "hard":
 			settings['smartSimulation'] = true;
 			settings['monteCarloTrials'] = 5000;
 			settings['expansionConstant'] = 1.75;
-			settings['certaintyThreshold'] = 0.25;
+			settings['certaintyThreshold'] = 0.1;
 			settings['ponder'] = true;
 			settings['increasingFactor'] = 1.07;
 			break;
@@ -1317,7 +1304,7 @@ function getNewSettings() {
 			settings['smartSimulation'] = true;
 			settings['monteCarloTrials'] = 10000;
 			settings['expansionConstant'] = 1.75;
-			settings['certaintyThreshold'] = 0.15;
+			settings['certaintyThreshold'] = 0.01;
 			settings['ponder'] = true;
 			settings['increasingFactor'] = 1.07;
 			break;
@@ -1326,15 +1313,15 @@ function getNewSettings() {
 			settings['monteCarloTrials'] = 200000;
 			settings['expansionConstant'] = 1.8125;
 			// bound: 0.03125
-			settings['certaintyThreshold'] = 0.01;
+			settings['certaintyThreshold'] = 0.001;
 			settings['ponder'] = true;
 			settings['increasingFactor'] = 1.07;
 			break;
 		case "can't win them all":
 			settings['smartSimulation'] = true;
 			settings['monteCarloTrials'] = 1000000;
-			settings['expansionConstant'] = 2;
-			settings['certaintyThreshold'] = 0.001;
+			settings['expansionConstant'] = 3;
+			settings['certaintyThreshold'] = 0.0001;
 			settings['ponder'] = true;
 			settings['increasingFactor'] = 1.07;
 			break;
@@ -1342,7 +1329,7 @@ function getNewSettings() {
 			settings['smartSimulation'] = true;
 			settings['monteCarloTrials'] = 5000000;
 			settings['expansionConstant'] = 5;
-			settings['certaintyThreshold'] = 0.01;
+			settings['certaintyThreshold'] = 0.0001;
 			settings['ponder'] = true;
 			settings['increasingFactor'] = 1.07;
 			break;
@@ -1460,7 +1447,6 @@ class MctsNode {
 				for (i = 0; i < this.children.length; i++)
 					if (this.children[i].totalTries === 0) {
 						if (ran === 0) {
-							// console.log(this.children[i]);
 							tboard[this.children[i].lastMove][b2d[this.children[i].lastMove]--]
 								= this.turn ? 1:2;
 							this.children[i].runSimulation(tboard, b2d);
