@@ -19,7 +19,7 @@ var brush = boardui.getContext("2d");
 var numChoose1, numChoose2, numChoose3, lnc1, lnc2, lnc3, stopChoose;
 var analElem = getElemId('anal'), numTrialsElem = getElemId('num-trials');
 var gameSettingsMenu = getElemId('settings-menu');
-var aiIdGlobal = 0; // prevents multiple MCTS recursive functions simultaneously
+var aiIdGlobal = 0; // prevents multiple Mcts recursive functions simultaneously
 
 var winHelperGlobal = new Array(4);
 var board2dGlobal;
@@ -56,7 +56,7 @@ function onResize() {
 function startPonder() {
 	pondering = setInterval(function() {
 		if (!globalRoot)
-			globalRoot = createMCTSRoot();
+			globalRoot = createMctsRoot();
 		var startTime = new Date().getTime();
 		var tempCount = 0;
 		while ((new Date().getTime() - startTime) < 30 && !stopChoose) {
@@ -86,7 +86,7 @@ function adjustButtons() {
 }
 
 function updateAnalysis() {
-	var range = getMCTSDepthRange();
+	var range = getMctsDepthRange();
 
 	analElem.innerHTML = "Analysis: Depth-" + range[1] + " Result-" +
 		range[2] + " Certainty-" + (globalRoot && globalRoot.totalTries > 0 ?
@@ -152,7 +152,7 @@ function newGame(cId) {
 
 	saveSettingsCookie(cookieId);
 
-	globalRoot = createMCTSRoot();
+	globalRoot = createMctsRoot();
 	drawBoard();
 
 	if (aiTurn !== 'none')
@@ -193,7 +193,7 @@ function newGameCookie(cookie) {
 	position = pos;
 	setupPosition(position);
 
-	globalRoot = createMCTSRoot();
+	globalRoot = createMctsRoot();
 	drawBoard();
 
 	if (aiTurn !== 'none')
@@ -598,10 +598,10 @@ function setTurn(turn, col, row) {
 
 	redTurnGlobal = turn;
 
-	globalRoot = MCTSGetNextRoot(col);
+	globalRoot = MctsGetNextRoot(col);
 	if (globalRoot)
 		globalRoot.parent = null;
-	else globalRoot = createMCTSRoot();
+	else globalRoot = createMctsRoot();
 	globalRoot.lastMove = -1;
 
 	var mtc = mostTriedChild(globalRoot, null);
@@ -732,7 +732,7 @@ function gameMiddle(b2d) {
 	return true;
 }
 
-function MCTSGetChildren(father, tboard, b2d) {
+function MctsGetChildren(father, tboard, b2d) {
 	if (gameTied(b2d)) {
 		father.gameOver = -2;
 		return [];
@@ -752,7 +752,7 @@ function MCTSGetChildren(father, tboard, b2d) {
 		return [];
 	}
 	if (win[0] !== false)
-		return [new MCTSNode(!father.turn, father, win[0])];
+		return [new MctsNode(!father.turn, father, win[0])];
 
 	if (gameMiddle(b2d)) {
 		var children;
@@ -761,20 +761,20 @@ function MCTSGetChildren(father, tboard, b2d) {
 		else if (b2d[dimensions[0] / 2 | 0] === dimensions[1] - 1
 			&& monteCarloTrials > 1000)
 			return [
-				new MCTSNode(!father.turn, father, dimensions[0] / 2 | 0),
-				new MCTSNode(!father.turn, father, 0),
-				new MCTSNode(!father.turn, father, 1)
+				new MctsNode(!father.turn, father, dimensions[0] / 2 | 0),
+				new MctsNode(!father.turn, father, 0),
+				new MctsNode(!father.turn, father, 1)
 			];
 		else children = new Array(1 + dimensions[0] / 2 | 0);
 		for (var i = 0; i < children.length; i++)
-			children[i] = new MCTSNode(!father.turn, father, i);
+			children[i] = new MctsNode(!father.turn, father, i);
 		return children;
 	}
 
 	var i = 0;
 	var children = new Array(win[1].length);
 	for (i = 0; i < win[1].length; i++)
-		children[i] = new MCTSNode(!father.turn, father, win[1][i] - 1);
+		children[i] = new MctsNode(!father.turn, father, win[1][i] - 1);
 
 	// if (/^4*$/.test(board))
 	// 	for (i = 0; i < children.length - 1; i++)
@@ -794,9 +794,9 @@ function ib (b1, b2) {
 	return true;
 }
 
-var MCTSSimulate;
+var MctsSimulate;
 
-function MCTSDumbSimulate(father, tboard, b2d, gTurn) {
+function MctsDumbSimulate(father, tboard, b2d, gTurn) {
 	var lastMove, turn = gTurn, done = false;
 	var row, col;
 	while (done == -1) {
@@ -813,7 +813,7 @@ function MCTSDumbSimulate(father, tboard, b2d, gTurn) {
 	return done == (gTurn ? 1:2) ? 1:-1;
 }
 
-function MCTSSimulateSmart(father, tboard, b2d, gTurn) {
+function MctsSimulateSmart(father, tboard, b2d, gTurn) {
 	var turn = gTurn, done = -1;
 	var row, col;
 
@@ -859,12 +859,12 @@ function MCTSSimulateSmart(father, tboard, b2d, gTurn) {
 	return done == (gTurn ? 1:2) ? 1:-1;
 }
 
-function createMCTSRoot() {
-	MCTSSimulate = smartSimulation ? MCTSSimulateSmart:MCTSDumbSimulate;
-	return new MCTSNode(redTurnGlobal, null, -1);
+function createMctsRoot() {
+	MctsSimulate = smartSimulation ? MctsSimulateSmart:MctsDumbSimulate;
+	return new MctsNode(redTurnGlobal, null, -1);
 }
 
-function MCTSGetNextRoot(col) {
+function MctsGetNextRoot(col) {
 	if (!globalRoot || !globalRoot.children)
 		return null;
 	for (var i = 0; i < globalRoot.children.length; i++)
@@ -874,13 +874,13 @@ function MCTSGetNextRoot(col) {
 	return null;
 }
 
-function runMCTS(times, threshold, callback, aiId) {
+function runMcts(times, threshold, callback, aiId) {
 	if (!globalRoot)
-		globalRoot = createMCTSRoot();
-	runMCTSRecursive(times, threshold, callback, 0, aiId);
+		globalRoot = createMctsRoot();
+	runMctsRecursive(times, threshold, callback, 0, aiId);
 }
 
-function runMCTSRecursive(times, threshold, callback, count, aiId) {
+function runMctsRecursive(times, threshold, callback, count, aiId) {
 	if (aiId !== aiIdGlobal)
 		return;
 	var startTime = new Date().getTime();
@@ -916,7 +916,7 @@ function runMCTSRecursive(times, threshold, callback, count, aiId) {
 		lnc2 = lnc1;
 		lnc1 = initTimes - times;
 		setTimeout(function() {
-			runMCTSRecursive(times, threshold, callback, ++count, aiId);
+			runMctsRecursive(times, threshold, callback, ++count, aiId);
 		}, 1);
 	}
 }
@@ -957,7 +957,7 @@ function leastTriedChild(root) {
 	return child;
 }
 
-function getMCTSDepthRange() {
+function getMctsDepthRange() {
 	var root, range = new Array(3);
 	for (range[0] = -1, root = globalRoot; root && root.children; range[0]++, root = leastTriedChild(root));
 	for (range[1] = -1, root = globalRoot; root && root.children; range[1]++, root = mostTriedChild(root));
@@ -971,7 +971,7 @@ function getMCTSDepthRange() {
 	return range;
 }
 
-function getBestMoveMCTS() {
+function getBestMoveMcts() {
 	var bestChild = mostTriedChild(globalRoot, null);
 	if (!bestChild)
 		return globalRoot.gameOver;
@@ -981,12 +981,12 @@ function getBestMoveMCTS() {
 function playAiMove() {
 	aiStopped = false;
 	if (!globalRoot || globalRoot.totalTries < monteCarloTrials && certaintyThreshold < 1 && !(globalRoot.children && globalRoot.children.length == 1))
-		runMCTS(monteCarloTrials - globalRoot.totalTries, certaintyThreshold, fpaim, ++aiIdGlobal);
+		runMcts(monteCarloTrials - globalRoot.totalTries, certaintyThreshold, fpaim, ++aiIdGlobal);
 	else fpaim();
 }
 
 function fpaim() {
-	var bestCol = getBestMoveMCTS();
+	var bestCol = getBestMoveMcts();
 	var gOver = playMoveGlobal(board, bestCol, redTurnGlobal,
 		winHelperGlobal, board2dGlobal);
 	setTurn(!redTurnGlobal, bestCol, board2dGlobal[bestCol] + 1);
@@ -1428,7 +1428,7 @@ document.addEventListener('keypress', function (event) {
 	}
 });
 
-class MCTSNode {
+class MctsNode {
 	constructor(turn, parent, lastMove) {
 		this.turn = turn;
 		this.parent = parent;
@@ -1445,7 +1445,7 @@ class MCTSNode {
 			tboard[this.lastMove][b2d[this.lastMove]--]
 				= !this.turn ? 1:2;
 		if (typeof this.children === 'undefined') {
-			this.children = MCTSGetChildren(this, tboard, b2d);
+			this.children = MctsGetChildren(this, tboard, b2d);
 			if (typeof this.children !== 'undefined')
 				this.countUnexplored = this.children.length;
 		}
@@ -1470,9 +1470,9 @@ class MCTSNode {
 					}
 			} else {
 				var lt = Math.log(this.totalTries);
-				var bestChild = this.children[0], bestPotential = MCTSChildPotential(this.children[0], lt), potential;
+				var bestChild = this.children[0], bestPotential = MctsChildPotential(this.children[0], lt), potential;
 				for (i = 1; i < this.children.length; i++) {
-					potential = MCTSChildPotential(this.children[i], lt);
+					potential = MctsChildPotential(this.children[i], lt);
 					if (potential > bestPotential) {
 						bestPotential = potential;
 						bestChild = this.children[i];
@@ -1484,7 +1484,7 @@ class MCTSNode {
 	}
 
 	runSimulation(tboard, b2d) {
-		this.backPropogate(MCTSSimulate(this, tboard, b2d, this.turn));
+		this.backPropogate(MctsSimulate(this, tboard, b2d, this.turn));
 	}
 
 	backPropogate(simulation) {
@@ -1498,7 +1498,7 @@ class MCTSNode {
 	}
 }
 
-function MCTSChildPotential(child, lt) {
+function MctsChildPotential(child, lt) {
 	var w = child.misses - child.hits;
 	var n = child.totalTries;
 	var c = expansionConstant;
@@ -1507,7 +1507,7 @@ function MCTSChildPotential(child, lt) {
 }
 
 function efficiencyTest() {
-	globalRoot = createMCTSRoot();
+	globalRoot = createMctsRoot();
 	var totalTrials, start = new Date().getTime();
 	for (totalTrials = 0; totalTrials < 100000; totalTrials++)
 		globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
@@ -1521,7 +1521,7 @@ function efficiencyTest() {
 
 function speedTest(totalTrials) {
 	totalTrials = totalTrials || 5E5;
-	globalRoot = createMCTSRoot();
+	globalRoot = createMctsRoot();
 	let startTime = new Date().getTime();
 	while (globalRoot.totalTries < totalTrials)
 		globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
@@ -1542,13 +1542,13 @@ function testExpansionConstants(c1, c2, numTrials, nT, output) {
 
 		redTurnGlobal = true;
 		position = "";
-		var r1 = createMCTSRoot(), r2 = createMCTSRoot();
+		var r1 = createMctsRoot(), r2 = createMctsRoot();
 
 		while (over < 0) {
 			var r = (I % 2 === 0) === redTurnGlobal ? r1:r2;
 			expansionConstant = (I % 2 === 0) === redTurnGlobal ? c1:c2;
 			if (!r)
-				r = createMCTSRoot();
+				r = createMctsRoot();
 			while (r.totalTries < nT) {
 				for (var i = 0; i < 100; i++)
 					r.chooseChild(position);
@@ -1578,7 +1578,7 @@ function testExpansionConstants(c1, c2, numTrials, nT, output) {
 			// 			break;
 			// 		}
 			// 	r1.parent = null;
-			// } else r1 = createMCTSRoot();
+			// } else r1 = createMctsRoot();
 
 			// if (r2.children) {
 			// 	for (var i = 0; i < r2.children.length; i++)
@@ -1588,7 +1588,7 @@ function testExpansionConstants(c1, c2, numTrials, nT, output) {
 			// 			break;
 			// 		}
 			// 	r2.parent = null;
-			// } else r2 = createMCTSRoot();
+			// } else r2 = createMctsRoot();
 			nT *= 1.07;
 			// console.log("next turn ", board, over, bestCol, bestRow);
 		}
