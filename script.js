@@ -19,7 +19,10 @@ var brush = boardui.getContext("2d");
 var numChoose1, numChoose2, numChoose3, lnc1, lnc2, lnc3, stopChoose;
 var analElem = getElemId('anal'), numTrialsElem = getElemId('num-trials');
 var gameSettingsMenu = getElemId('settings-menu');
-var aiIdGlobal = 0;
+var aiIdGlobal = 0; // prevents multiple MCTS recursive functions simultaneously
+
+var winHelperGlobal = new Array(4);
+var board2dGlobal;
 
 function pageReady() {
 	resizeBoard();
@@ -57,10 +60,10 @@ function startPonder() {
 		var startTime = new Date().getTime();
 		var tempCount = 0;
 		while ((new Date().getTime() - startTime) < 30 && !stopChoose) {
-			globalRoot.chooseChild(position);
+			globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
 			tempCount++;
 		}
-		if (numChoose3 && (tempCount < numChoose3 / 10 || tempCount < numChoose2 / 10 || tempCount < numChoose1 / 10))
+		if (numChoose3 && (tempCount < numChoose3 / 5 || tempCount < numChoose2 / 5 || tempCount < numChoose1 / 5))
 			stopChoose = true;
 		else {
 			numChoose3 = numChoose2;
@@ -88,7 +91,7 @@ function updateAnalysis() {
 	analElem.innerHTML = "Analysis: Depth-" + range[1] + " Result-" +
 		range[2] + " Certainty-" + (globalRoot && globalRoot.totalTries > 0 ?
 		(resultCertainty(globalRoot) * 100).toFixed(0):"0") + "%";
-	numTrialsElem.innerHTML = "Trials: " + globalRoot.totalTries;
+	numTrialsElem.innerHTML = "Trials: " + numberWithCommas(globalRoot.totalTries);
 }
 
 function resultCertainty(root) {
@@ -102,6 +105,8 @@ function resultCertainty(root) {
 }
 
 function newGame(cId) {
+
+	aiIdGlobal++;
 
 	if (cId === undefined)
 		cId = newCookieId();
@@ -134,6 +139,12 @@ function newGame(cId) {
 		for (var a = 0; a < board[i].length; a++)
 			board[i][a] = 0;
 	}
+
+	board2dGlobal = new Array(board.length);
+	for (var i = 0; i < board2dGlobal.length; i++)
+		board2dGlobal[i] = dimensions[1] - 1;
+
+	winHelperGlobal = initWinHelper();
 
 	redTurnGlobal = true;
 	numChoose1 = numChoose2 = numChoose3 = lnc1 = lnc2 = lnc3 = stopChoose = false;
@@ -170,6 +181,13 @@ function newGameCookie(cookie) {
 		for (var a = 0; a < board[i].length; a++)
 			board[i][a] = 0;
 	}
+
+	board2dGlobal = new Array(board.length);
+	for (var i = 0; i < board2dGlobal.length; i++)
+		board2dGlobal[i] = dimensions[1] - 1;
+
+	winHelperGlobal = initWinHelper();
+
 	redTurnGlobal = true;
 	numChoose1 = numChoose2 = numChoose3 = lnc1 = lnc2 = lnc3 = stopChoose = false;
 	position = pos;
@@ -275,6 +293,7 @@ function setupPosition(pos) {
 		var col = parseInt(pos.charAt(i), 10) - 1;
 		if (legalMove(board, col, false)) {
 			playMove(board, col, redTurnGlobal);
+			board2dGlobal[col]--;
 			redTurnGlobal = !redTurnGlobal;
 		} else return false;
 	}
@@ -298,6 +317,172 @@ function setupBoard(pos) {
 			}
 	}
 	return b;
+}
+
+function initWinHelper() {
+	var winHelper = new Array(4); // Vertical, H, D1 /, D2 \
+
+	winHelper[0] = new Array(dimensions[0]);
+	for (var i = 0; i < winHelper[0].length; i++) {
+		winHelper[0][i] = new Array(2);
+		winHelper[0][i][0] = 0;
+		winHelper[0][i][1] = 0;
+	}
+
+	winHelper[1] = new Array(dimensions[1]);
+	for (var i = 0; i < winHelper[1].length; i++) {
+		winHelper[1][i] = new Array(dimensions[0]);
+		for (var a = 0; a < winHelper[1][i].length; a++) {
+			winHelper[1][i][a] = new Array(2);
+			winHelper[1][i][a][0] = 0;
+			winHelper[1][i][a][1] = 0;
+		}
+	}
+
+	var numDiagonals = 1 + (dimensions[0] - 4) + (dimensions[1] - 4);
+	var maxDiagonal = Math.min(dimensions[0], dimensions[1]);
+
+	winHelper[2] = new Array(numDiagonals);
+	for (var i = 0; i < winHelper[2].length; i++) {
+		var diagLength = Math.min(maxDiagonal,
+			3 + Math.min(i + 1, numDiagonals - i));
+		winHelper[2][i] = new Array(diagLength);
+		for (var a = 0; a < winHelper[2][i].length; a++) {
+			winHelper[2][i][a] = new Array(2);
+			winHelper[2][i][a][0] = 0;
+			winHelper[2][i][a][1] = 0;
+		}
+	}
+
+	winHelper[3] = new Array(numDiagonals);
+	for (var i = 0; i < winHelper[3].length; i++) {
+		var diagLength = Math.min(maxDiagonal,
+			3 + Math.min(i + 1, numDiagonals - i));
+		winHelper[3][i] = new Array(diagLength);
+		for (var a = 0; a < winHelper[3][i].length; a++) {
+			winHelper[3][i][a] = new Array(2);
+			winHelper[3][i][a][0] = 0;
+			winHelper[3][i][a][1] = 0;
+		}
+	}
+
+	return winHelper;
+}
+
+function updateWinHelper(winHelper, row, col, color) {
+
+	row = dimensions[1] - row - 1;
+
+	// Vertical
+	if (winHelper[0][col][1] === color) {
+		winHelper[0][col][0]++;
+		if (winHelper[0][col][0] === 4)
+			return true;
+	} else {
+		winHelper[0][col][0] = 1;
+		winHelper[0][col][1] = color;
+	}
+
+	var countLeft, countRight, i, changed;
+
+	// Horizontal
+
+	winHelper[1][row][col][0] = 1;
+	winHelper[1][row][col][1] = color;
+	countLeft = countRight = 0;
+	changed = false;
+
+	if (col !== dimensions[0] - 1
+		&& winHelper[1][row][col + 1][1] === color) {
+
+		countRight = winHelper[1][row][col + 1][0];
+		changed = true;
+	}
+
+	if (col !== 0 && winHelper[1][row][col - 1][1] === color) {
+		countLeft = winHelper[1][row][col - 1][0];
+		changed = true;
+	}
+
+	if (changed) {
+		if (countRight + countLeft + 1 >= 4) return true;
+
+		winHelper[1][row][col - countLeft][0]
+			= winHelper[1][row][col + countRight][0]
+			= countRight + countLeft + 1;
+	}
+
+	var diagNum, diagIndex, maxDiags = Math.min(dimensions[0], dimensions[1]);
+
+	// Diagonal 1 / (diagNum)
+	diagNum = dimensions[1] - 4 + col - row;
+
+	if (diagNum < maxDiags && diagNum >= 0) {
+		diagIndex = Math.min(row, col);
+
+		winHelper[2][diagNum][diagIndex][0] = 1;
+		winHelper[2][diagNum][diagIndex][1] = color;
+		countLeft = countRight = 0;
+		changed = false;
+
+		if (col !== dimensions[0] - 1 && row !== dimensions[1] - 1
+			&& winHelper[2][diagNum][diagIndex + 1][1] === color) {
+
+			countRight = winHelper[2][diagNum][diagIndex + 1][0];
+			changed = true;
+		}
+
+		if (col !== 0 && row !== 0
+			&& winHelper[2][diagNum][diagIndex - 1][1] === color) {
+
+			countLeft = winHelper[2][diagNum][diagIndex - 1][0];
+			changed = true;
+		}
+
+		if (changed) {
+			if (countRight + countLeft + 1 >= 4) return true;
+
+			winHelper[2][diagNum][diagIndex - countLeft][0]
+				= winHelper[2][diagNum][diagIndex + countRight][0]
+				= countRight + countLeft + 1;
+		}
+	}
+
+	// Diagonal 2 \ (diagNum)
+	diagNum = dimensions[1] - 4 + (dimensions[0] - col - 1) - row;
+
+	if (diagNum < maxDiags && diagNum >= 0) {
+		diagIndex = Math.min(row, dimensions[0] - col - 1);
+
+		winHelper[3][diagNum][diagIndex][0] = 1;
+		winHelper[3][diagNum][diagIndex][1] = color;
+		countLeft = countRight = 0;
+		changed = false;
+
+		if (col !== 0 && row !== dimensions[1] - 1
+			&& winHelper[3][diagNum][diagIndex + 1][1] === color) {
+
+			countRight = winHelper[3][diagNum][diagIndex + 1][0];
+			changed = true;
+		}
+
+		if (col !== dimensions[0] - 1 && row !== 0
+			&& winHelper[3][diagNum][diagIndex - 1][1] === color) {
+
+			countLeft = winHelper[3][diagNum][diagIndex - 1][0];
+			changed = true;
+		}
+
+		if (changed) {
+			if (countRight + countLeft + 1 >= 4) return true;
+
+			winHelper[3][diagNum][diagIndex - countLeft][0]
+				= winHelper[3][diagNum][diagIndex + countRight][0]
+				= countRight + countLeft + 1;
+		}
+	}
+
+	return false;
 }
 
 function drawEllipse(x, y, w, h) {
@@ -465,6 +650,12 @@ function playMove(tboard, col, turn) {
 	return row;
 }
 
+function playMoveGlobal(tboard, col, turn, winHelper, b2d) {
+	var color = turn ? 1:2;
+	tboard[col][b2d[col]] = color;
+	return updateWinHelper(winHelper, b2d[col]--, col, color);
+}
+
 boardui.addEventListener('mousedown', function (e) {
 	if (e.which === 3)
 		return;
@@ -478,9 +669,10 @@ boardui.addEventListener('mousedown', function (e) {
 	var col = getCol(e.pageX, e.pageY);
 	if (!legalMove(board, col, true))
 		return;
-	var row = playMove(board, col, redTurnGlobal);
+	var gOver = playMoveGlobal(board, col, redTurnGlobal,
+		winHelperGlobal, board2dGlobal);
 
-	setTurn(!redTurnGlobal, col, row);
+	setTurn(!redTurnGlobal, col, board2dGlobal[col] + 1);
 });
 
 boardui.addEventListener('mousemove', function (e) {
@@ -493,73 +685,104 @@ boardui.addEventListener('mousemove', function (e) {
 	drawHover(col);
 });
 
-function getWinningMove(tboard, turn) {
-	var row, color = turn ? 1:2;
+function getWinningMove(tboard, b2d, turn) {
 	for (var col = 0; col < tboard.length; col++) {
-		if (tboard[col][0] !== 0)
+		if (b2d[col] === -1)
 			continue;
-		for (row = tboard[col].length - 1; tboard[col][row] !== 0; row--);
-		if (gameOverColor(tboard, col, row, color) != -1)
-			return [col, row];
+		if (gameOverColor(tboard, col, b2d[col], turn ? 1:2) !== -1)
+			return col;
 	}
-	return [-1, -1];
+	return -1;
 }
 
-function cGetWinningMove(tboard, turn) {
-	var row, color = turn ? 1:2, c = 0;
+function cGetWinningMove(tboard, b2d, turn) {
+	var color = turn ? 1:2, c = 0;
 	for (var col = 0; col < tboard.length; col++) {
-		if (tboard[col][0] !== 0)
+		if (b2d[col] === -1)
 			continue;
 		c++;
-		for (row = tboard[col].length - 1; tboard[col][row] !== 0; row--);
-		if (gameOverColor(tboard, col, row, color) != -1)
-			return [col, row];
+		if (gameOverColor(tboard, col, b2d[col], color) != -1)
+			return [col, b2d[col]];
 	}
 	return [false, c];
 }
-function aGetWinningMove(tboard, turn, c) {
-	var row, color = turn ? 1:2, a = new Array(c);
+function aGetWinningMove(tboard, b2d, turn, c) {
+	var color = turn ? 1:2, a = new Array(c);
 	for (var col = 0; col < tboard.length; col++) {
-		if (tboard[col][0] !== 0)
+		if (b2d[col] === -1)
 			continue;
 		a[--c] = col + 1;
-		for (row = tboard[col].length - 1; tboard[col][row] !== 0; row--);
-		if (gameOverColor(tboard, col, row, color) != -1)
-			return [col, row];
+		if (gameOverColor(tboard, col, b2d[col], color) != -1)
+			return [col, b2d[col]];
 	}
 	return [false, a];
 }
 
-function MCTSGetChildren(father, board) {
-	var tboard = setupBoard(board);
+function gameTied(b2d) {
+	for (var i = 0; i < b2d.length; i++)
+		if (b2d[i] !== -1)
+			return false;
+	return true;
+}
 
-	if (typeof father.gameOver !== 'undefined')
+function gameMiddle(b2d) {
+	for (var i = 0; i < b2d.length; i++)
+		if (i !== (dimensions[0] / 2 | 0) && b2d[i] !== dimensions[1] - 1)
+			return false;
+	return true;
+}
+
+function MCTSGetChildren(father, tboard, b2d) {
+	if (gameTied(b2d)) {
+		father.gameOver = -2;
 		return [];
+	}
+
+	// tboard = boardCopy(tboard);
+
+	// console.log(b2d, tboard);
 
 	// win[1] stores all possible moves
 
-	var win = cGetWinningMove(tboard, father.turn);
+	var win = cGetWinningMove(tboard, b2d, father.turn);
 	if (win[0] === false)
-		win = aGetWinningMove(tboard, !father.turn, win[1]);
+		win = aGetWinningMove(tboard, b2d, !father.turn, win[1]);
 	else {
 		father.gameOver = win[0];
-		return;
+		return [];
 	}
 	if (win[0] !== false)
 		return [new MCTSNode(!father.turn, father, win[0])];
+
+	if (gameMiddle(b2d)) {
+		var children;
+		if (b2d[dimensions[0] / 2 | 0] === -1)
+			children = new Array(dimensions[0] / 2 | 0);
+		else if (b2d[dimensions[0] / 2 | 0] === dimensions[1] - 1
+			&& monteCarloTrials > 1000)
+			return [
+				new MCTSNode(!father.turn, father, dimensions[0] / 2 | 0),
+				new MCTSNode(!father.turn, father, 0),
+				new MCTSNode(!father.turn, father, 1)
+			];
+		else children = new Array(1 + dimensions[0] / 2 | 0);
+		for (var i = 0; i < children.length; i++)
+			children[i] = new MCTSNode(!father.turn, father, i);
+		return children;
+	}
 
 	var i = 0;
 	var children = new Array(win[1].length);
 	for (i = 0; i < win[1].length; i++)
 		children[i] = new MCTSNode(!father.turn, father, win[1][i] - 1);
 
-	if (/^4*$/.test(board))
-		for (i = 0; i < children.length - 1; i++)
-			for (a = i + 1; a < children.length; a++)
-				if (identicalBoards(setupBoard(board + (children[i].lastMove + 1)), setupBoard(board + (children[a].lastMove+1)))) {
-					children.splice(a, 1);
-					a--;
-				}
+	// if (/^4*$/.test(board))
+	// 	for (i = 0; i < children.length - 1; i++)
+	// 		for (a = i + 1; a < children.length; a++)
+	// 			if (identicalBoards(setupBoard(board + (children[i].lastMove + 1)), setupBoard(board + (children[a].lastMove+1)))) {
+	// 				children.splice(a, 1);
+	// 				a--;
+	// 			}
 
 	return children;
 }
@@ -573,11 +796,7 @@ function ib (b1, b2) {
 
 var MCTSSimulate;
 
-function MCTSDumbSimulate(board, gTurn, gOver) {
-	if (gOver)
-		return -1;
-	var tboard = setupBoard(board);
-
+function MCTSDumbSimulate(father, tboard, b2d, gTurn) {
 	var lastMove, turn = gTurn, done = false;
 	var row, col;
 	while (done == -1) {
@@ -594,35 +813,49 @@ function MCTSDumbSimulate(board, gTurn, gOver) {
 	return done == (gTurn ? 1:2) ? 1:-1;
 }
 
-function MCTSSimulateSmart(board, gTurn, gOver) {
-	var tboard = setupBoard(board);
-
-	var lastMove = [-1, -1], turn = gTurn, done = gameOverFull(tboard);
+function MCTSSimulateSmart(father, tboard, b2d, gTurn) {
+	var turn = gTurn, done = -1;
 	var row, col;
+
+	var colsLeft = 0;
+	for (var i = 0; i < b2d.length; i++)
+		if (b2d[i] !== -1)
+			colsLeft++;
+	if (colsLeft === 0) {
+		father.gameOver = -2;
+		return 0;
+	}
+
 	while (done === -1) {
-		lastMove = getWinningMove(tboard, turn);
-		if (lastMove[0] === -1)
-			lastMove = getWinningMove(tboard, !turn);
+		// console.log(boardCopy(tboard));
+		col = getWinningMove(tboard, b2d, turn);
+		if (col === -1)
+			col = getWinningMove(tboard, b2d, !turn);
 		else {
 			done = turn ? 1:2;
+			// console.log(turn, 'wins', col);
 			break;
 		}
-		if (lastMove[0] === -1)
+
+		if (col === -1)
 			do {
 				col = Math.random() * tboard.length | 0;
-				row = playMove(tboard, col, turn);
-			}	while (row < 0);
-		else {
-			col = lastMove[0];
-			row = lastMove[1];
-			tboard[col][row] = turn ? 1:2;
+			}	while (b2d[col] === -1);
+
+		tboard[col][b2d[col]] = turn ? 1:2;
+		b2d[col]--;
+
+		if (b2d[col] === -1) {
+			colsLeft--;
+			if (colsLeft === 0) {
+				// console.log('tie');
+				return 0;
+			}
 		}
-		done = gameOver(tboard, col, row);
+
 		turn = !turn;
 	}
 
-	if (done === 0)
-		return 0;
 	return done == (gTurn ? 1:2) ? 1:-1;
 }
 
@@ -654,9 +887,9 @@ function runMCTSRecursive(times, threshold, callback, count, aiId) {
 	var initTimes = times;
 	if (times === 0 && globalRoot.totalTries < 5E3)
 		while (globalRoot.totalTries < 5E3)
-			globalRoot.chooseChild(position);
+			globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
 	while (times > 0 && (new Date().getTime() - startTime) < 100) {
-		globalRoot.chooseChild(position);
+		globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
 		times--;
 	}
 	if (count % 20 === 0) {
@@ -753,9 +986,10 @@ function playAiMove() {
 }
 
 function fpaim() {
-	var bestRow = getBestMoveMCTS();
-	var bestCol = playMove(board, bestRow, redTurnGlobal);
-	setTurn(!redTurnGlobal, bestRow, bestCol);
+	var bestCol = getBestMoveMCTS();
+	var gOver = playMoveGlobal(board, bestCol, redTurnGlobal,
+		winHelperGlobal, board2dGlobal);
+	setTurn(!redTurnGlobal, bestCol, board2dGlobal[bestCol] + 1);
 }
 
 function gameOver(tboard, x, y) {
@@ -1203,23 +1437,22 @@ class MCTSNode {
 		this.misses = 0;
 		this.totalTries = 0;
 		this.countUnexplored = 0;
+		this.gameOver = -1;
 	}
 
-	chooseChild(board) {
+	chooseChild(tboard, b2d) {
 		if (this.lastMove !== -1)
-			board += this.lastMove + 1;
+			tboard[this.lastMove][b2d[this.lastMove]--]
+				= !this.turn ? 1:2;
 		if (typeof this.children === 'undefined') {
-			this.children = MCTSGetChildren(this, board);
+			this.children = MCTSGetChildren(this, tboard, b2d);
 			if (typeof this.children !== 'undefined')
 				this.countUnexplored = this.children.length;
 		}
-		if (typeof this.gameOver !== 'undefined') // next move wins
-			this.backPropogate(1);
-		else if (this.children.length === 0) {
-			this.backPropogate(0);
-		} else {
-			var i;
-			var unexplored = this.countUnexplored;
+		if (this.gameOver !== -1) // next move wins
+			this.backPropogate(this.gameOver === -2 ? 0:1);
+		else {
+			var i, unexplored = this.countUnexplored;
 
 			if (unexplored > 0) {
 				this.countUnexplored--;
@@ -1227,7 +1460,10 @@ class MCTSNode {
 				for (i = 0; i < this.children.length; i++)
 					if (this.children[i].totalTries === 0) {
 						if (ran === 0) {
-							this.children[i].runSimulation(board);
+							// console.log(this.children[i]);
+							tboard[this.children[i].lastMove][b2d[this.children[i].lastMove]--]
+								= this.turn ? 1:2;
+							this.children[i].runSimulation(tboard, b2d);
 							return;
 						}
 						ran--;
@@ -1242,13 +1478,13 @@ class MCTSNode {
 						bestChild = this.children[i];
 					}
 				}
-				bestChild.chooseChild(board);
+				bestChild.chooseChild(tboard, b2d);
 			}
 		}
 	}
 
-	runSimulation(board) {
-		this.backPropogate(MCTSSimulate(board, this.turn, this.gameOver));
+	runSimulation(tboard, b2d) {
+		this.backPropogate(MCTSSimulate(this, tboard, b2d, this.turn));
 	}
 
 	backPropogate(simulation) {
@@ -1274,11 +1510,11 @@ function efficiencyTest() {
 	globalRoot = createMCTSRoot();
 	var totalTrials, start = new Date().getTime();
 	for (totalTrials = 0; totalTrials < 100000; totalTrials++)
-		globalRoot.chooseChild(position);
+		globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
 	console.log((new Date().getTime() - start) / 1E3);
 	setInterval(function() {
 		for (var i = 0; i < 1000; i++)
-			globalRoot.chooseChild(position);
+			globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
 		numTrialsElem.innerHTML = globalRoot.totalTries;
 	}, 1);
 }
@@ -1288,7 +1524,7 @@ function speedTest(totalTrials) {
 	globalRoot = createMCTSRoot();
 	let startTime = new Date().getTime();
 	while (globalRoot.totalTries < totalTrials)
-		globalRoot.chooseChild(position);
+		globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
 	let elapsedTime = (new Date().getTime() - startTime) / 1E3;
 	console.log(numberWithCommas(Math.round(globalRoot.totalTries / elapsedTime)) + ' simulations per second.');
 }
@@ -1410,4 +1646,21 @@ function findBestExpansionConstant(seed, nT, bound, numSimulations, prollyGreate
 			findBestExpansionConstant(seed, nT, bound / 2, numSimulations, delta1 < delta2 === prollyGreater);
 		}
 	}
+}
+
+function board2dCopy(b2d) {
+	newB2d = new Array(b2d.length);
+	for (var i = 0; i < b2d.length; i++)
+		newB2d[i] = b2d[i];
+	return newB2d;
+}
+
+function boardCopy(tboard) {
+	var newBoard = new Array(tboard.length);
+	for (var i = 0; i < tboard.length; i++) {
+		newBoard[i] = new Array(tboard[i].length);
+		for (var a = 0; a < tboard[i].length; a++)
+			newBoard[i][a] = tboard[i][a];
+	}
+	return newBoard;
 }
