@@ -803,6 +803,17 @@ function MctsDumbSimulate(father, tboard, b2d, gTurn) {
 }
 
 function MctsSimulateSmart(father, tboard, b2d, gTurn) {
+
+	if (mlmode && dimensions[0] === 7 && dimensions[1] === 6) {
+		var mlresult = mlstates.getResult(tboard);
+
+		if (mlresult != -1)
+			if (mlresult === 0)
+				return 0;
+			else return mlresult == (gTurn ? 1:2) ? 1:-1;
+	}
+
+
 	var turn = gTurn, done = -1;
 	var row, col;
 
@@ -1650,4 +1661,14 @@ function boardCopy(tboard) {
 			newBoard[i][a] = tboard[i][a];
 	}
 	return newBoard;
+}
+
+function showMlInfoModal() {
+	showInfoModal("Connect Four 'Ml' Info",
+		"The Connect Four ai is now compatible with a form of pseudo-'machine-learning' data set in order to improve its performance.",
+		"Note that while the ai plays considerably better with the data set, it is not necessary for sufficiently challenging gameplay.",
+		"If you want the latest data, you can download it from <a href='https://github.com/The-Ofek-Foundation/ConnectFourMl/blob/master/v1.c4states' target='_blank'>here</a>.",
+		"If you want to train the data set yourself, and potentially create a much stronger opponent, please contain me at: <a href='mailto:ofek@theofekfoundation.org' target='_blank'>ofek@theofekfoundation.org</a>",
+		"Note that the ai will only use this data if the board is 7x6 (standard dimensions), and if it isn't in the lowest difficulties.",
+	);
 }
