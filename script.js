@@ -1050,7 +1050,8 @@ function gameOverColor(tboard, x, y, color) {
 
 	countConsecutive = 1;
 
-	for (a = y - 1; a >= 0 && countConsecutive < 4 && tboard[x][a] == color; a--, countConsecutive++);
+	// ??? there's nothing there XD
+	// for (a = y - 1; a >= 0 && countConsecutive < 4 && tboard[x][a] == color; a--, countConsecutive++);
 	for (a = y + 1; a < tboard[0].length && countConsecutive < 4 && tboard[x][a] == color; a++, countConsecutive++);
 
 	if (countConsecutive == 4)

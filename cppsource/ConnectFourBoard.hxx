@@ -32,17 +32,29 @@ namespace game_ai
 			return height;
 		}
 
+		Color getTurn() const
+		{
+			return turn;
+		}
+
 		// no bounds checking
-		inline bool isLegal(unsigned col) const;
+		inline bool isLegal(unsigned col) const
+		{
+			return heights[col];
+		}
 
 		void playMove(unsigned col);
 		void removeMove(unsigned col);
 
-		inline bool gameNotTied() const;
-		bool gameWinningColor(unsigned col, Color color) const;
+		bool gameNotTied() const
+		{
+			return numMovesLeft;
+		}
+
+		bool isWinningMove(unsigned col, Color color) const;
 
 	private:
-		unsigned width, height;
+		const unsigned width, height;
 		std::vector<std::vector<Color>> board;
 		std::vector<unsigned> heights;
 		Color turn;
