@@ -1,6 +1,6 @@
 var docWidth, docHeight;
 var discWidth, discHeight;
-var board;
+var board, _boardCopy;
 var redTurnGlobal;
 var globalRoot;
 var expansionConstant;
@@ -134,8 +134,10 @@ function newGame(cId) {
 
 	over = -1;
 	board = new Array(dimensions[0]);
+	_boardCopy = new Array(dimensions[0]);
 	for (var i = 0; i < board.length; i++) {
 		board[i] = new Array(dimensions[1]);
+		_boardCopy[i] = new Array(dimensions[1]);
 		for (var a = 0; a < board[i].length; a++)
 			board[i][a] = 0;
 	}
@@ -176,8 +178,10 @@ function newGameCookie(cookie) {
 	adjustButtons();
 
 	board = new Array(dimensions[0]);
+	_boardCopy = new Array(dimensions[0]);
 	for (var i = 0; i < board.length; i++) {
 		board[i] = new Array(dimensions[1]);
+		_boardCopy[i] = new Array(dimensions[1]);
 		for (var a = 0; a < board[i].length; a++)
 			board[i][a] = 0;
 	}
@@ -1532,8 +1536,10 @@ function testExpansionConstants(c1, c2, numTrials, nT, output) {
 	for (var I = 0; I < numTrials; I++) {
 		over = -1;
 		board = new Array(dimensions[0]);
+		_boardCopy = new Array(dimensions[0]);
 		for (var i = 0; i < board.length; i++) {
 			board[i] = new Array(dimensions[1]);
+			_boardCopy[i] = new Array(dimensions[1]);
 			for (var a = 0; a < board[i].length; a++)
 				board[i][a] = 0;
 		}
@@ -1654,13 +1660,10 @@ function board2dCopy(b2d) {
 }
 
 function boardCopy(tboard) {
-	var newBoard = new Array(tboard.length);
-	for (var i = 0; i < tboard.length; i++) {
-		newBoard[i] = new Array(tboard[i].length);
+	for (var i = 0; i < tboard.length; i++)
 		for (var a = 0; a < tboard[i].length; a++)
-			newBoard[i][a] = tboard[i][a];
-	}
-	return newBoard;
+			_boardCopy[i][a] = tboard[i][a];
+	return _boardCopy;
 }
 
 function showMlInfoModal() {
