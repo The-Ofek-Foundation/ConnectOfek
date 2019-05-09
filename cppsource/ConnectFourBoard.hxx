@@ -59,6 +59,12 @@ namespace game_ai
 		std::vector<unsigned> heights;
 		Color turn;
 		unsigned numMovesLeft;
+
+
+		// to be used by isWinningMove for optimization
+		// if there are more than this amount of moves left,
+		// it is not possible for the next move to be a win
+		const unsigned _maxMovesLeftForWinning;
 	};
 
 

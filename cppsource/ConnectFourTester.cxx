@@ -30,27 +30,27 @@ void playGame(Color aiTurn)
 
 int main()
 {
-	playGame(Color::EMPTY);
+	// playGame(Color::EMPTY);
 
-	// ConnectFourBoard cfb;
+	ConnectFourBoard cfb;
 
-	// cfb.playMove(0u);
-	// cfb.playMove(1u);
-	// cfb.playMove(0u);
-	// cfb.playMove(1u);
-	// cfb.playMove(0u);
+	cfb.playMove(0u);
+	cfb.playMove(1u);
+	cfb.playMove(0u);
+	cfb.playMove(1u);
+	cfb.playMove(0u);
 	// cfb.playMove(1u);
 	// cfb.playMove(2u);
 	// cfb.playMove(2u);
 	// cfb.playMove(2u);
-	// cfb.playMove(3u);ooo
+	// cfb.playMove(3u);
 
 	// cfb.playMove(0u);
 	// cfb.playMove(3u);
 	// cfb.playMove(5u);
 	// cfb.removeMove(0u);
 
-	// std::cout << cfb << std::endl;
+	std::cout << cfb << std::endl;
 
-	// std::cout << (int)cfb.isWinningMove(0u, Color::YELLOW) << std::endl;;
+	std::cout << (int)cfb.isWinningMove(0u, Color::YELLOW) << std::endl;;
 }

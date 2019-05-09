@@ -7,7 +7,8 @@ using namespace game_ai;
 
 ConnectFourBoard::ConnectFourBoard(unsigned width, unsigned height)
 	: width(width), height(height), board(width, std::vector<Color>(height, Color::EMPTY)),
-	  heights(width, height), turn(Color::RED), numMovesLeft(width * height)
+	  heights(width, height), turn(Color::RED), numMovesLeft(width * height),
+	  _maxMovesLeftForWinning(numMovesLeft - 5u)
 {
 }
 
@@ -33,6 +34,13 @@ void ConnectFourBoard::removeMove(unsigned col)
 
 bool ConnectFourBoard::isWinningMove(unsigned col, Color color) const
 {
+	// optimization --- not enough moves played for there to be a winning move
+	if (numMovesLeft > _maxMovesLeftForWinning || (numMovesLeft == _maxMovesLeftForWinning && color == Color::YELLOW))
+	{
+		return false;
+	}
+
+
 	unsigned row = heights[col] - 1u;
 	unsigned countConsecutive = 1u;
 

@@ -44,7 +44,7 @@ namespace
 	{
 		for (unsigned col = 0u; col < board.getWidth(); ++col)
 		{
-			if (board.isWinningMove(col, turn))
+			if (board.isLegal(col) && board.isWinningMove(col, turn))
 			{
 				return col;
 			}
@@ -84,32 +84,49 @@ namespace
 // 		board.playMove(moveLocation);
 // 	}
 
-// 	int simulateGame(BitBoard board)
-// 	{
-// 		while (true)
-// 		{
-// 			uint64_t legalMoves = board.getLegalMoves(board.getBlackTurn());
+	Color simulateGame(ConnectFourBoard& board)
+	{
+		while (board.gameNotTied())
+		{
+			if (getWinningMove(board, board.getTurn()) != -1u)
+			{
+				return board.getTurn();
+			}
 
-// 			if (numSetBits(legalMoves) == 0)
-// 			{
-// 				board.changeTurn();
-// 				legalMoves = board.getLegalMoves(board.getBlackTurn());
+			unsigned winningMove = getWinningMove(board, otherTurn(board.getTurn()));
+			if (winningMove != -1u)
+			{
+				board.playMove(winningMove);
+				continue;
+			}
 
-// 				if (numSetBits(legalMoves) == 0)
-// 				{
-// 					// game over, neither player has moves
-// 					return board.getGameResult();
-// 				}
-// 			}
+			
+		}
 
-// 			playRandomMove(board, legalMoves);
-// 			// ++c;
-// 			// if (c == 10)
-// 			// {
-// 			// 	break;
-// 			// }
-// 		}
-// 	}
+		return Color::EMPTY;
+	}
+	// 		uint64_t legalMoves = board.getLegalMoves(board.getBlackTurn());
+
+	// 		if (numSetBits(legalMoves) == 0)
+	// 		{
+	// 			board.changeTurn();
+	// 			legalMoves = board.getLegalMoves(board.getBlackTurn());
+
+	// 			if (numSetBits(legalMoves) == 0)
+	// 			{
+	// 				// game over, neither player has moves
+	// 				return board.getGameResult();
+	// 			}
+	// 		}
+
+	// 		playRandomMove(board, legalMoves);
+	// 		// ++c;
+	// 		// if (c == 10)
+	// 		// {
+	// 		// 	break;
+	// 		// }
+	// 	}
+	// }
 }
 
 // void MctsNode::runSimulation()
