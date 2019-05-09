@@ -11,7 +11,14 @@ namespace game_ai
 	class ConnectFourNode
 	{
 	public:
-		ConnectFourNode(unsigned lastMove, ConnectFourNode* parent = nullptr, Color gameResult = Color::EMPTY);
+		ConnectFourNode(unsigned lastMove = -1u, ConnectFourNode* parent = nullptr, Color gameResult = Color::EMPTY);
+
+		// !!! should avoid using !!!
+		// reuse subtree!!!
+		void reset();
+
+		const ConnectFourNode* getBestChild() const;
+
 
 		void chooseChild(ConnectFourBoard& board);
 		void backPropagate(Color result);

@@ -16,7 +16,9 @@ namespace game_ai
 
 		ConnectFourBoard(unsigned width, unsigned height);
 		ConnectFourBoard();
+		ConnectFourBoard(ConnectFourBoard&& board);
 
+		// to be used sparingly
 		ConnectFourBoard& operator = (const ConnectFourBoard& board);
 
 		const std::vector<std::vector<Color>>& getBoard() const

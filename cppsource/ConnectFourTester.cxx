@@ -1,56 +1,67 @@
 #include "ConnectFourBoard.hxx"
+#include "ConnectFourMcts.hxx"
+#include "ConnectFourNode.hxx"
 #include "ConnectFourUtilities.hxx"
 
 #include <iostream>
+#include <cstdio>
+
 using namespace game_ai;
 
 
 void playGame(Color aiTurn)
 {
-	ConnectFourBoard cfb;
+	ConnectFourMcts cfm{ConnectFourBoard()};
 	unsigned col;
 
-	while (cfb.gameNotTied())
+	while (cfm.getBoard().gameNotTied())
 	{
-		std::cout << cfb << "\nYour Move: ";
+		cfm.runTime(1000u);
+		const ConnectFourNode* bestChild = cfm.getNode().getBestChild();
+
+		printf("The AI thinks that %d is the best move, after %d trials.\n\n",
+			bestChild->getLastMove(), cfm.getNode().getTotalTrials());
+
+
+		std::cout << cfm.getBoard() << "\nYour Move: ";
 		std::cin >> col;
 
-		if (cfb.isWinningMove(col, cfb.getTurn()))
+		if (cfm.getBoard().isWinningMove(col, cfm.getBoard().getTurn()))
 		{
-			cfb.playMove(col);
+			cfm.playMove(col);
 			break;
 		}
 
-		cfb.playMove(col);
+		cfm.playMove(col);
 	}
 
-	std::cout << "Game Over!\n" << cfb << "\n";
+	std::cout << "Game Over!\n" << cfm.getBoard() << "\n";
 }
 
 
 int main()
 {
-	// playGame(Color::EMPTY);
+	playGame(Color::EMPTY);
 
-	ConnectFourBoard cfb;
-
-	cfb.playMove(0u);
-	cfb.playMove(1u);
-	cfb.playMove(0u);
-	cfb.playMove(1u);
-	cfb.playMove(0u);
-	// cfb.playMove(1u);
-	// cfb.playMove(2u);
-	// cfb.playMove(2u);
-	// cfb.playMove(2u);
-	// cfb.playMove(3u);
+	// ConnectFourBoard cfb;
 
 	// cfb.playMove(0u);
-	// cfb.playMove(3u);
-	// cfb.playMove(5u);
-	// cfb.removeMove(0u);
+	// cfb.playMove(1u);
+	// cfb.playMove(0u);
+	// cfb.playMove(1u);
+	// cfb.playMove(0u);
+	// // cfb.playMove(1u);
+	// // cfb.playMove(2u);
+	// // cfb.playMove(2u);
+	// // cfb.playMove(2u);
+	// // cfb.playMove(3u);
 
-	std::cout << cfb << std::endl;
+	// // cfb.playMove(0u);
+	// // cfb.playMove(3u);
+	// // cfb.playMove(5u);
+	// // cfb.removeMove(0u);
 
-	std::cout << (int)cfb.isWinningMove(0u, Color::YELLOW) << std::endl;;
+	// std::cout << cfb << std::endl;
+
+	// std::cout << (int)cfb.isWinningMove(0u, Color::YELLOW) << std::endl;;
 }

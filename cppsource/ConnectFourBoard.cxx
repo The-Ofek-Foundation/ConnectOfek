@@ -2,6 +2,7 @@
 #include "ConnectFourUtilities.hxx"
 
 #include <ostream>
+#include <utility>
 
 using namespace game_ai;
 
@@ -15,6 +16,13 @@ ConnectFourBoard::ConnectFourBoard(unsigned width, unsigned height)
 
 ConnectFourBoard::ConnectFourBoard()
 	: ConnectFourBoard(DEFAULT_WIDTH, DEFAULT_HEIGHT)
+{
+}
+
+ConnectFourBoard::ConnectFourBoard(ConnectFourBoard&& board)
+	: width(board.width), height(board.height), board(std::move(board.board)),
+	  heights(std::move(board.heights)), turn(board.turn), numMovesLeft(board.numMovesLeft),
+	  _maxMovesLeftForWinning(board._maxMovesLeftForWinning)
 {
 }
 

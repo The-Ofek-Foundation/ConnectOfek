@@ -15,6 +15,33 @@ ConnectFourNode::ConnectFourNode(unsigned lastMove, ConnectFourNode* parent, Col
 {
 }
 
+void ConnectFourNode::reset()
+{
+	lastMove = -1u;
+	parent = nullptr;
+	redWins = yellowWins = totalTrials = 0u;
+	numUnexploredChildren = 0u;
+	gameResult = Color::EMPTY;
+	children.clear();
+}
+
+const ConnectFourNode* ConnectFourNode::getBestChild() const
+{
+	unsigned mostTrials = 0u;
+	const ConnectFourNode* bestChild = nullptr;
+
+	for (const ConnectFourNode& child : children)
+	{
+		if (child.totalTrials > mostTrials)
+		{
+			mostTrials = child.totalTrials;
+			bestChild = &child;
+		}
+	}
+
+	return bestChild;
+}
+
 void ConnectFourNode::backPropagate(Color result)
 {
 	if (result == Color::RED)
@@ -83,12 +110,18 @@ namespace
 			playRandomMove(board);
 		}
 
-		return Color::EMPTY;
+		return Color::TIE;
 	}
 }
 
 void ConnectFourNode::populateChildren(const ConnectFourBoard& board)
 {
+	if (!board.gameNotTied())
+	{
+		gameResult = Color::TIE;
+		return;
+	}
+
 	unsigned winningMove;
 	if ((winningMove = getWinningMove(board, board.getTurn())) != -1u)
 	{
@@ -116,7 +149,7 @@ void ConnectFourNode::populateChildren(const ConnectFourBoard& board)
 double ConnectFourNode::childPotential(const ConnectFourNode& child, Color turn) const
 {
 	static double EXPANSION_CONSTANT = 2.31;
-	double w = turn == Color::RED ? (child.redWins - child.yellowWins) : (child.yellowWins - child.redWins);
+	double w = turn == Color::RED ? child.redWins : child.yellowWins;
 	double n = child.totalTrials;
 	double t = totalTrials;
 
@@ -125,10 +158,13 @@ double ConnectFourNode::childPotential(const ConnectFourNode& child, Color turn)
 
 void ConnectFourNode::chooseChild(ConnectFourBoard& board)
 {
-	if (numUnexploredChildren == 0u && totalTrials == 0u)
+	// std::cout << "Up top: " << numUnexploredChildren << " " << totalTrials << std::endl;
+	if (children.empty() && gameResult == Color::EMPTY)
 	{
+		// std::cout << "Before populating" << std::endl;
 		populateChildren(board);
 		numUnexploredChildren = children.size();
+		// std::cout << "After populating" << std::endl;
 	}
 
 	if (gameResult != Color::EMPTY)
@@ -159,13 +195,17 @@ void ConnectFourNode::chooseChild(ConnectFourBoard& board)
 
 	// all the children are explored, pick the one with the best potential
 
+	// std::cout << "First Time" << std::endl;
+
 	double bestPotential;
 	bool init = true;
-	ConnectFourNode* bestChild;
+	ConnectFourNode* bestChild = nullptr;
 
 	for (ConnectFourNode& child : children)
 	{
 		double potential = childPotential(child, board.getTurn());
+		// printf("Move: %d\tPotential: %f\tRed Wins: %d\tYellow Wins: %d\tTotal Trials: %d\tTurn: %d\n",
+		// 	child.lastMove, potential, child.redWins, child.yellowWins, child.totalTrials, (unsigned)board.getTurn());
 
 		if (init || potential > bestPotential)
 		{
@@ -175,6 +215,8 @@ void ConnectFourNode::chooseChild(ConnectFourBoard& board)
 		}
 	}
 
+	// std::cout << "About to play " << bestChild->lastMove << std::endl;
 	board.playMove(bestChild->lastMove);
 	bestChild->chooseChild(board);
+	// std::cout << "After choosing" << std::endl;
 }

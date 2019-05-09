@@ -7,7 +7,8 @@ namespace game_ai
 	{
 		EMPTY = 0,
 		RED,
-		YELLOW
+		YELLOW,
+		TIE
 	};
 
 	inline char getChar(Color c)
