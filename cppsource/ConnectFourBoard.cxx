@@ -18,6 +18,24 @@ ConnectFourBoard::ConnectFourBoard()
 {
 }
 
+ConnectFourBoard& ConnectFourBoard::operator = (const ConnectFourBoard& that)
+{
+	for (unsigned col = 0u; col < width; ++col)
+	{
+		heights[col] = that.heights[col];
+
+		for (unsigned row = 0u; row < height; ++row)
+		{
+			board[col][row] = that.board[col][row];
+		}
+	}
+
+	turn = that.turn;
+	numMovesLeft = that.numMovesLeft;
+
+	return *this;
+}
+
 void ConnectFourBoard::playMove(unsigned col)
 {
 	board[col][--heights[col]] = turn;

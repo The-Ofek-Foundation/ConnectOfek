@@ -15,7 +15,6 @@ ConnectFourNode::ConnectFourNode(unsigned lastMove, ConnectFourNode* parent, Col
 {
 }
 
-
 void ConnectFourNode::backPropagate(Color result)
 {
 	if (result == Color::RED)
@@ -54,35 +53,16 @@ namespace
 	}
 
 
-// 	inline void playRandomMove(BitBoard& board, uint64_t legalMoves)
-// 	{
-// 		double totalWeight = 0.0;
-// 		for (int coord = 0; coord < BOARD_SIZE; ++coord)
-// 		{
-// 			if ((1uLL << coord) & legalMoves)
-// 			{
-// 				totalWeight += LOCATION_WEIGHTS[coord];
-// 			}
-// 		}
+	inline void playRandomMove(ConnectFourBoard& board)
+	{
+		unsigned randomCol;
+		do
+		{
+			randomCol = static_cast<unsigned>(dist(generator) * board.getWidth());
+		} while (!board.isLegal(randomCol));
 
-// 		double ranWeight = dist(generator) * totalWeight;
-// 		uint64_t moveLocation = 1uLL;
-
-// 		for (int coord = 0; coord < BOARD_SIZE; ++coord, moveLocation <<= 1)
-// 		{
-// 			if (moveLocation & legalMoves)
-// 			{
-// 				ranWeight -= LOCATION_WEIGHTS[coord];
-
-// 				if (ranWeight <= 0.0)
-// 				{
-// 					break;
-// 				}
-// 			}
-// 		}
-
-// 		board.playMove(moveLocation);
-// 	}
+		board.playMove(randomCol);
+	}
 
 	Color simulateGame(ConnectFourBoard& board)
 	{
@@ -100,40 +80,12 @@ namespace
 				continue;
 			}
 
-			
+			playRandomMove(board);
 		}
 
 		return Color::EMPTY;
 	}
-	// 		uint64_t legalMoves = board.getLegalMoves(board.getBlackTurn());
-
-	// 		if (numSetBits(legalMoves) == 0)
-	// 		{
-	// 			board.changeTurn();
-	// 			legalMoves = board.getLegalMoves(board.getBlackTurn());
-
-	// 			if (numSetBits(legalMoves) == 0)
-	// 			{
-	// 				// game over, neither player has moves
-	// 				return board.getGameResult();
-	// 			}
-	// 		}
-
-	// 		playRandomMove(board, legalMoves);
-	// 		// ++c;
-	// 		// if (c == 10)
-	// 		// {
-	// 		// 	break;
-	// 		// }
-	// 	}
-	// }
 }
-
-// void MctsNode::runSimulation()
-// {
-// 	backPropagate(simulateGame(BitBoard(board)));
-// }
-
 
 void ConnectFourNode::populateChildren(const ConnectFourBoard& board)
 {
@@ -171,70 +123,58 @@ double ConnectFourNode::childPotential(const ConnectFourNode& child, Color turn)
 	return w / n + EXPANSION_CONSTANT * std::sqrt(std::log(t) / n);
 }
 
-// void MctsNode::chooseChild()
-// {
-// 	if (numUnexploredChildren == -1)
-// 	{
-// 		// std::cout << "NEW: " << numUnexploredChildren << "\n";
-// 		// std::cout << "Adding Children\n";
-// 		// std::cout << board << "\n";
-// 		populateChildren();
-// 		// std::cout << "Num Children: " << children.size() << "\n";
-// 		numUnexploredChildren = children.size();
-// 	}
+void ConnectFourNode::chooseChild(ConnectFourBoard& board)
+{
+	if (numUnexploredChildren == 0u && totalTrials == 0u)
+	{
+		populateChildren(board);
+		numUnexploredChildren = children.size();
+	}
 
-// 	if (children.empty())
-// 	{
-// 		runSimulation();
-// 	}
-// 	else if (numUnexploredChildren == 0)
-// 	{
-// 		double bestPotential;
-// 		bool init = true;
-// 		int bestChildIndex = 0;
-// 		int numChildren = children.size();
+	if (gameResult != Color::EMPTY)
+	{
+		backPropagate(gameResult);
+		return;
+	}
 
+	if (numUnexploredChildren != 0u)
+	{
+		// there are still some unexplored children
 
-// 		for (int i = 0; i < numChildren; ++i)
-// 		{
-// 			double potential = childPotential(children[i]);
+		unsigned chosenChildNum = static_cast<unsigned>(dist(generator) * numUnexploredChildren);
+		for (ConnectFourNode& child : children)
+		{
+			if (child.totalTrials == 0u)
+			{
+				if (chosenChildNum-- == 0u)
+				{
+					--numUnexploredChildren;
+					board.playMove(child.lastMove);
+					child.backPropagate(simulateGame(board));
+					return;
+				}
+			}
+		}
+	}
 
-// 			if (init || potential > bestPotential)
-// 			{
-// 				init = false;
-// 				bestChildIndex = i;
-// 				bestPotential = potential;
-// 			}
-// 		}
+	// all the children are explored, pick the one with the best potential
 
-// 		// std::cout << "GOING IN\n" << children[bestChildIndex].totalTrials << "\n";
-// 		children[bestChildIndex].chooseChild();
-// 		// std::cout << "AFTER: " << children[bestChildIndex].totalTrials << "\n";
+	double bestPotential;
+	bool init = true;
+	ConnectFourNode* bestChild;
 
-// 		// for (MctsNode& child : children)
-// 		// {
-// 		// 	std::cout << "C: " << child.totalTrials << "\n";
-// 		// }
-// 	}
-// 	else
-// 	{
-// 		// std::cout << "Num unexplored: " << numUnexploredChildren << "\n";
-// 		int chosenChildNum = dist(generator) * numUnexploredChildren;
-// 		for (MctsNode& child : children)
-// 		{
-// 			if (child.totalTrials == 0)
-// 			{
-// 				if (chosenChildNum == 0)
-// 				{
-// 					--numUnexploredChildren;
-// 					// std::cout << "Chosen Child\n";
-// 					child.runSimulation();
-// 					break;
-// 				}
+	for (ConnectFourNode& child : children)
+	{
+		double potential = childPotential(child, board.getTurn());
 
-// 				--chosenChildNum;
-// 			}
-// 		}
-// 	}
-// 	// std::cout << "OLD: " << numUnexploredChildren << "\n";
-// }
+		if (init || potential > bestPotential)
+		{
+			init = false;
+			bestPotential = potential;
+			bestChild = &child;
+		}
+	}
+
+	board.playMove(bestChild->lastMove);
+	bestChild->chooseChild(board);
+}

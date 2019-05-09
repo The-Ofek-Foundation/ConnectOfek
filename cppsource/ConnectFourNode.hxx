@@ -13,7 +13,7 @@ namespace game_ai
 	public:
 		ConnectFourNode(unsigned lastMove, ConnectFourNode* parent = nullptr, Color gameResult = Color::EMPTY);
 
-	// 	void chooseChild();
+		void chooseChild(ConnectFourBoard& board);
 		void backPropagate(Color result);
 		void populateChildren(const ConnectFourBoard& board);
 
