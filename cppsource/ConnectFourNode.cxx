@@ -1,7 +1,7 @@
 #include "ConnectFourNode.hxx"
 
 #include "ConnectFourUtilities.hxx"
-#include "ConnectFourBoard.hxx"
+#include "ConnectFourBB.hxx"
 
 #include <cmath>
 #include <cstdint>
@@ -67,7 +67,7 @@ namespace
 	static std::default_random_engine generator;
 	std::uniform_real_distribution<double> dist(0.0, 1.0);
 
-	inline unsigned getWinningMove(const ConnectFourBoard& board, Color turn)
+	inline unsigned getWinningMove(const ConnectFourBB& board, Color turn)
 	{
 		for (unsigned col = 0u; col < board.getWidth(); ++col)
 		{
@@ -81,7 +81,7 @@ namespace
 	}
 
 
-	inline void playRandomMove(ConnectFourBoard& board)
+	inline void playRandomMove(ConnectFourBB& board)
 	{
 		unsigned randomCol;
 		do
@@ -92,7 +92,7 @@ namespace
 		board.playMove(randomCol);
 	}
 
-	Color simulateGame(ConnectFourBoard& board)
+	Color simulateGame(ConnectFourBB& board)
 	{
 		while (board.gameNotTied())
 		{
@@ -115,7 +115,7 @@ namespace
 	}
 }
 
-void ConnectFourNode::populateChildren(const ConnectFourBoard& board)
+void ConnectFourNode::populateChildren(const ConnectFourBB& board)
 {
 	if (!board.gameNotTied())
 	{
@@ -161,15 +161,12 @@ namespace
 	}
 }
 
-void ConnectFourNode::chooseChild(ConnectFourBoard& board)
+void ConnectFourNode::chooseChild(ConnectFourBB& board)
 {
-	// std::cout << "Up top: " << numUnexploredChildren << " " << totalTrials << std::endl;
 	if (children.empty() && gameResult == Color::EMPTY)
 	{
-		// std::cout << "Before populating" << std::endl;
 		populateChildren(board);
 		numUnexploredChildren = children.size();
-		// std::cout << "After populating" << std::endl;
 	}
 
 	if (gameResult != Color::EMPTY)
@@ -200,7 +197,6 @@ void ConnectFourNode::chooseChild(ConnectFourBoard& board)
 
 	// all the children are explored, pick the one with the best potential
 
-	// std::cout << "First Time" << std::endl;
 
 	float bestPotential = 0.0f;
 	bool init = true;
@@ -210,8 +206,6 @@ void ConnectFourNode::chooseChild(ConnectFourBoard& board)
 	for (ConnectFourNode& child : children)
 	{
 		float potential = childPotential(child, board.getTurn(), lt);
-		// printf("Move: %d\tPotential: %f\tRed Wins: %d\tYellow Wins: %d\tTotal Trials: %d\tTurn: %d\n",
-		// 	child.lastMove, potential, child.redWins, child.yellowWins, child.totalTrials, (unsigned)board.getTurn());
 
 		if (init || potential > bestPotential)
 		{
@@ -221,8 +215,6 @@ void ConnectFourNode::chooseChild(ConnectFourBoard& board)
 		}
 	}
 
-	// std::cout << "About to play " << bestChild->lastMove << std::endl;
 	board.playMove(bestChild->lastMove);
 	bestChild->chooseChild(board);
-	// std::cout << "After choosing" << std::endl;
 }

@@ -2,7 +2,7 @@
 #define CONNECTFOURNODE_H
 
 #include "ConnectFourUtilities.hxx"
-#include "ConnectFourBoard.hxx"
+#include "ConnectFourBB.hxx"
 
 #include <math.h>
 #include <vector>
@@ -21,7 +21,7 @@ namespace game_ai
 		const ConnectFourNode* getBestChild() const;
 
 
-		void chooseChild(ConnectFourBoard& board);
+		void chooseChild(ConnectFourBB& board);
 
 		unsigned getTotalTrials() const
 		{
@@ -58,7 +58,7 @@ namespace game_ai
 		Color gameResult;
 
 		void backPropagate(Color result);
-		void populateChildren(const ConnectFourBoard& board);
+		void populateChildren(const ConnectFourBB& board);
 
 		inline float childPotential(const ConnectFourNode& child, Color turn, float lt) const
 		{

@@ -1,3 +1,4 @@
+#include "ConnectFourBB.hxx"
 #include "ConnectFourBoard.hxx"
 #include "ConnectFourMcts.hxx"
 #include "ConnectFourNode.hxx"
@@ -6,21 +7,22 @@
 #include <iostream>
 #include <cstdio>
 
-#include <ctime> // comment out
+#include <ctime>
 
 using namespace game_ai;
 
 
 void playGame(Color aiTurn)
 {
-	ConnectFourMcts cfm{ConnectFourBoard()};
-	cfm.runTrials(1000000u); return;
+	ConnectFourMcts cfm{ConnectFourBB()};
+	// cfm.runTrials(1000000u); return;
 	unsigned col;
 
 	while (cfm.getBoard().gameNotTied())
 	{
 		std::clock_t startTime = std::clock();
-		cfm.runTrials(1000000u);
+		// cfm.runTrials(1000000u);
+		cfm.runTime(1000u);
 		std::cout << (std::clock() - startTime) * 1.0 / CLOCKS_PER_SEC << std::endl;
 		const ConnectFourNode* bestChild = cfm.getNode().getBestChild();
 
@@ -48,7 +50,7 @@ int main()
 {
 	playGame(Color::EMPTY);
 
-	// ConnectFourBoard cfb;
+	// ConnectFourBB cfb;
 
 	// cfb.playMove(0u);
 	// cfb.playMove(1u);
@@ -68,5 +70,5 @@ int main()
 
 	// std::cout << cfb << std::endl;
 
-	// std::cout << (int)cfb.isWinningMove(0u, Color::YELLOW) << std::endl;;
+	// std::cout << (int)cfb.isWinningMove(0u, Color::RED) << std::endl;;
 }

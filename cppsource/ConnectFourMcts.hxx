@@ -1,9 +1,8 @@
 #ifndef CONNECTFOURMCTS_H
 #define CONNECTFOURMCTS_H
 
-#include "ConnectFourBoard.hxx"
+#include "ConnectFourBB.hxx"
 #include "ConnectFourNode.hxx"
-// #include "ConnectFourUtilities.hxx"
 
 
 namespace game_ai
@@ -12,14 +11,14 @@ namespace game_ai
 	{
 	public:
 
-		ConnectFourMcts(ConnectFourBoard&& board);
+		ConnectFourMcts(ConnectFourBB&& board);
 
 		unsigned runTime(unsigned timeInMilliseconds);
 		unsigned runTrials(unsigned numTrials);
 
 		void playMove(unsigned col);
 
-		const ConnectFourBoard& getBoard() const
+		const ConnectFourBB& getBoard() const
 		{
 			return board;
 		}
@@ -30,7 +29,7 @@ namespace game_ai
 		}
 
 	private:
-		ConnectFourBoard board, tempBoard;
+		ConnectFourBB board, tempBoard;
 		ConnectFourNode root;
 	};
 }

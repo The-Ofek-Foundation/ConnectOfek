@@ -1,8 +1,7 @@
 #include "ConnectFourMcts.hxx"
 
-#include "ConnectFourBoard.hxx"
+#include "ConnectFourBB.hxx"
 #include "ConnectFourNode.hxx"
-// #include "ConnectFourUtilities.hxx"
 
 #include <ctime>
 #include <utility>
@@ -10,8 +9,8 @@
 using namespace game_ai;
 
 
-ConnectFourMcts::ConnectFourMcts(ConnectFourBoard&& b)
-	: board(std::move(b)), tempBoard(b.getWidth(), b.getHeight()), root()
+ConnectFourMcts::ConnectFourMcts(ConnectFourBB&& b)
+	: board(std::move(b)), tempBoard(), root()
 {
 }
 
