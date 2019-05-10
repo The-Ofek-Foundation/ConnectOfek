@@ -55,7 +55,12 @@ namespace game_ai
 			return numMovesLeft;
 		}
 
-		bool isWinningMove(unsigned col, Color color) const;
+		inline bool winningMovePossible() const
+		{
+			return numMovesLeft <= _maxMovesLeftForWinning;
+		}
+
+		bool isWinningMove(const unsigned col, const Color color) const;
 
 	private:
 		const unsigned width, height;

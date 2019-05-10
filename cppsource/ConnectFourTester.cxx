@@ -6,17 +6,22 @@
 #include <iostream>
 #include <cstdio>
 
+#include <ctime> // comment out
+
 using namespace game_ai;
 
 
 void playGame(Color aiTurn)
 {
 	ConnectFourMcts cfm{ConnectFourBoard()};
+	cfm.runTrials(1000000u); return;
 	unsigned col;
 
 	while (cfm.getBoard().gameNotTied())
 	{
-		cfm.runTime(1000u);
+		std::clock_t startTime = std::clock();
+		cfm.runTrials(1000000u);
+		std::cout << (std::clock() - startTime) * 1.0 / CLOCKS_PER_SEC << std::endl;
 		const ConnectFourNode* bestChild = cfm.getNode().getBestChild();
 
 		printf("The AI thinks that %d is the best move, after %d trials.\n\n",

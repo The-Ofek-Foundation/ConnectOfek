@@ -58,23 +58,17 @@ void ConnectFourBoard::removeMove(unsigned col)
 	++numMovesLeft;
 }
 
-bool ConnectFourBoard::isWinningMove(unsigned col, Color color) const
+bool ConnectFourBoard::isWinningMove(const unsigned col, const Color color) const
 {
-	// optimization --- not enough moves played for there to be a winning move
-	if (numMovesLeft > _maxMovesLeftForWinning || (numMovesLeft == _maxMovesLeftForWinning && color == Color::YELLOW))
-	{
-		return false;
-	}
-
-
-	unsigned row = heights[col] - 1u;
+	const unsigned row = heights[col] - 1u;
 	unsigned countConsecutive = 1u;
+	unsigned x, y;
 
 	// check horizontal win
-	for (unsigned x = col - 1u; x < width && countConsecutive < 4u && board[x][row] == color; --x, ++countConsecutive);
-	for (unsigned x = col + 1u; x < width && countConsecutive < 4u && board[x][row] == color; ++x, ++countConsecutive);
+	for (x = col - 1u; x < width && board[x][row] == color; --x, ++countConsecutive);
+	for (x = col + 1u; x < width && board[x][row] == color; ++x, ++countConsecutive);
 
-	if (countConsecutive == 4u)
+	if (countConsecutive >= 4u)
 	{
 		return true;
 	}
@@ -82,9 +76,9 @@ bool ConnectFourBoard::isWinningMove(unsigned col, Color color) const
 	countConsecutive = 1u;
 
 	// check vertical win
-	for (unsigned y = row + 1u; y < height && countConsecutive < 4u && board[col][y] == color; ++y, ++countConsecutive);
+	for (y = row + 1u; y < height && board[col][y] == color; ++y, ++countConsecutive);
 
-	if (countConsecutive == 4u)
+	if (countConsecutive >= 4u)
 	{
 		return true;
 	}
@@ -92,20 +86,20 @@ bool ConnectFourBoard::isWinningMove(unsigned col, Color color) const
 	countConsecutive = 1u;
 
 	// check diagonal wins
-	for (unsigned x = col - 1u, y = row - 1u; x < width && y < height && countConsecutive < 4u && board[x][y] == color; --y, --x, ++countConsecutive);
-	for (unsigned x = col + 1u, y = row + 1u; x < width && y < height && countConsecutive < 4u && board[x][y] == color; ++y, ++x, ++countConsecutive);
+	for (x = col - 1u, y = row - 1u; x < width && y < height && board[x][y] == color; --y, --x, ++countConsecutive);
+	for (x = col + 1u, y = row + 1u; x < width && y < height && board[x][y] == color; ++y, ++x, ++countConsecutive);
 
-	if (countConsecutive == 4u)
+	if (countConsecutive >= 4u)
 	{
 		return true;
 	}
 
 	countConsecutive = 1u;
 
-	for (unsigned x = col - 1u, y = row + 1u; x < width && y < height && countConsecutive < 4u && board[x][y] == color; ++y, --x, ++countConsecutive);
-	for (unsigned x = col + 1u, y = row - 1u; x < width && y < height && countConsecutive < 4u && board[x][y] == color; --y, ++x, ++countConsecutive);
+	for (x = col - 1u, y = row + 1u; x < width && y < height && board[x][y] == color; ++y, --x, ++countConsecutive);
+	for (x = col + 1u, y = row - 1u; x < width && y < height && board[x][y] == color; --y, ++x, ++countConsecutive);
 
-	return countConsecutive == 4u;
+	return countConsecutive >= 4u;
 }
 
 

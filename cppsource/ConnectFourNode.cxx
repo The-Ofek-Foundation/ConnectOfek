@@ -3,7 +3,8 @@
 #include "ConnectFourUtilities.hxx"
 #include "ConnectFourBoard.hxx"
 
-#include <math.h>
+#include <cmath>
+#include <cstdint>
 #include <random>
 
 using namespace game_ai;
@@ -122,19 +123,22 @@ void ConnectFourNode::populateChildren(const ConnectFourBoard& board)
 		return;
 	}
 
-	unsigned winningMove;
-	if ((winningMove = getWinningMove(board, board.getTurn())) != -1u)
+	if (board.winningMovePossible())
 	{
-		// there is a winning move
-		children.push_back(ConnectFourNode(winningMove, this, board.getTurn()));
-		return;
-	}
+		unsigned winningMove;
+		if ((winningMove = getWinningMove(board, board.getTurn())) != -1u)
+		{
+			// there is a winning move
+			children.push_back(ConnectFourNode(winningMove, this, board.getTurn()));
+			return;
+		}
 
-	if ((winningMove = getWinningMove(board, otherTurn(board.getTurn()))) != -1u)
-	{
-		// opponent has a winning move
-		children.push_back(ConnectFourNode(winningMove, this));
-		return;
+		if ((winningMove = getWinningMove(board, otherTurn(board.getTurn()))) != -1u)
+		{
+			// opponent has a winning move
+			children.push_back(ConnectFourNode(winningMove, this));
+			return;
+		}
 	}
 
 	for (unsigned col = 0u; col < board.getWidth(); ++col)
@@ -146,14 +150,15 @@ void ConnectFourNode::populateChildren(const ConnectFourBoard& board)
 	}
 }
 
-double ConnectFourNode::childPotential(const ConnectFourNode& child, Color turn) const
+namespace
 {
-	static double EXPANSION_CONSTANT = 2.31;
-	double w = turn == Color::RED ? child.redWins : child.yellowWins;
-	double n = child.totalTrials;
-	double t = totalTrials;
-
-	return w / n + EXPANSION_CONSTANT * std::sqrt(std::log(t) / n);
+	static inline float fasterlog (float x)
+	{
+		union { float f; uint32_t i; } vx = { x };
+		float y = vx.i;
+		y *= 8.2629582881927490e-8f;
+		return y - 87.989971088f;
+	}
 }
 
 void ConnectFourNode::chooseChild(ConnectFourBoard& board)
@@ -197,13 +202,14 @@ void ConnectFourNode::chooseChild(ConnectFourBoard& board)
 
 	// std::cout << "First Time" << std::endl;
 
-	double bestPotential;
+	float bestPotential = 0.0f;
 	bool init = true;
 	ConnectFourNode* bestChild = nullptr;
+	float lt = fasterlog(totalTrials);
 
 	for (ConnectFourNode& child : children)
 	{
-		double potential = childPotential(child, board.getTurn());
+		float potential = childPotential(child, board.getTurn(), lt);
 		// printf("Move: %d\tPotential: %f\tRed Wins: %d\tYellow Wins: %d\tTotal Trials: %d\tTurn: %d\n",
 		// 	child.lastMove, potential, child.redWins, child.yellowWins, child.totalTrials, (unsigned)board.getTurn());
 

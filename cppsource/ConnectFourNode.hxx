@@ -4,6 +4,7 @@
 #include "ConnectFourUtilities.hxx"
 #include "ConnectFourBoard.hxx"
 
+#include <math.h>
 #include <vector>
 
 namespace game_ai
@@ -21,8 +22,6 @@ namespace game_ai
 
 
 		void chooseChild(ConnectFourBoard& board);
-		void backPropagate(Color result);
-		void populateChildren(const ConnectFourBoard& board);
 
 		unsigned getTotalTrials() const
 		{
@@ -49,8 +48,6 @@ namespace game_ai
 			return children;
 		}
 
-		double childPotential(const ConnectFourNode& child, Color turn) const;
-
 	private:
 		unsigned lastMove;
 		ConnectFourNode* parent;
@@ -59,11 +56,18 @@ namespace game_ai
 		unsigned numUnexploredChildren;
 		std::vector<ConnectFourNode> children = {};
 		Color gameResult;
-	// 	MctsNode* parent;
 
-	// 	void backPropagate(int result);
-	// 	void runSimulation();
-	// 	void populateChildren();
+		void backPropagate(Color result);
+		void populateChildren(const ConnectFourBoard& board);
+
+		inline float childPotential(const ConnectFourNode& child, Color turn, float lt) const
+		{
+			static float EXPANSION_CONSTANT = 2.31f;
+			float w = turn == Color::RED ? child.redWins : child.yellowWins;
+			float n = child.totalTrials;
+
+			return w / n + EXPANSION_CONSTANT * std::sqrt(lt / n);
+		}
 	};
 }
 
