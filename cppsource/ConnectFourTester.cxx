@@ -15,7 +15,7 @@ using namespace game_ai;
 void playGame(Color aiTurn)
 {
 	ConnectFourMcts cfm{ConnectFourBB()};
-	// cfm.runTrials(1000000u); return;
+	cfm.runTrials(1000000u); return;
 	unsigned col;
 
 	while (cfm.getBoard().gameNotTied())
@@ -48,27 +48,22 @@ void playGame(Color aiTurn)
 
 int main()
 {
-	playGame(Color::EMPTY);
+	playGame(Color::EMPTY); return 0;
 
-	// ConnectFourBB cfb;
+	ConnectFourBB cfb;
 
-	// cfb.playMove(0u);
-	// cfb.playMove(1u);
-	// cfb.playMove(0u);
-	// cfb.playMove(1u);
-	// cfb.playMove(0u);
-	// // cfb.playMove(1u);
-	// // cfb.playMove(2u);
-	// // cfb.playMove(2u);
-	// // cfb.playMove(2u);
-	// // cfb.playMove(3u);
+	cfb._setBoard({
+		            0, 0, 0, 0, 0, 0, 0,
+	                0, 0, 0, 0, 0, 0, 0,
+	                0, 0, 0, 0, 0, 0, 0,
+	                0, 0, 0, 0, 0, 0, 0,
+	                0, 0, 0, 0, 0, 0, 0,
+	                // 2, 1, 0, 0, 0, 0, 0,
+	                // 2, 2, 1, 0, 0, 0, 0,
+	                0, 2, 2, 2, 0, 0, 0
+	            });
 
-	// // cfb.playMove(0u);
-	// // cfb.playMove(3u);
-	// // cfb.playMove(5u);
-	// // cfb.removeMove(0u);
+	std::cout << cfb << std::endl;
 
-	// std::cout << cfb << std::endl;
-
-	// std::cout << (int)cfb.isWinningMove(0u, Color::RED) << std::endl;;
+	std::cout << (int)cfb.isWinningMove(0u, Color::YELLOW) << std::endl;;
 }

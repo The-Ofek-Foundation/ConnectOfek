@@ -3,6 +3,7 @@
 
 #include "ConnectFourUtilities.hxx"
 
+#include <array>
 #include <iostream>
 #include <vector>
 
@@ -10,6 +11,10 @@ namespace game_ai
 {
 	class ConnectFourBB
 	{
+	private:
+		static const unsigned WIDTH = 7u;
+		static const unsigned HEIGHT = 6u;
+
 	public:
 		ConnectFourBB();
 		ConnectFourBB(ConnectFourBB&& board);
@@ -54,9 +59,10 @@ namespace game_ai
 
 		Color getColor(unsigned col, unsigned row) const;
 
+		// for debugging purposes only
+		void _setBoard(std::array<unsigned, WIDTH * HEIGHT>&& b);
+
 	private:
-		static const unsigned WIDTH = 7u;
-		static const unsigned HEIGHT = 6u;
 
 		uint64_t redBoard, yellowBoard;
 		std::vector<unsigned> heights;
