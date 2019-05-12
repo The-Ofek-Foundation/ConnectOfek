@@ -33,7 +33,7 @@ void playGame(Color aiTurn)
 		std::cout << cfm.getBoard() << "\nYour Move: ";
 		std::cin >> col;
 
-		if (cfm.getBoard().isWinningMove(col, cfm.getBoard().getTurn()))
+		if (cfm.getBoard().isWinningMoveUsingCheck(col, cfm.getBoard().getTurn()))
 		{
 			cfm.playMove(col);
 			break;

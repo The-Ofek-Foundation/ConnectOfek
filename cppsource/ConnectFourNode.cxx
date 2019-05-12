@@ -69,9 +69,15 @@ namespace
 
 	inline unsigned getWinningMove(const ConnectFourBB& board, Color turn)
 	{
-		for (unsigned col = 0u; col < board.getWidth(); ++col)
+		unsigned col;
+		if ((col = board.getWinningCol(turn)) != -1u)
 		{
-			if (board.isLegal(col) && board.isWinningMove(col, turn))
+			return col;
+		}
+
+		for (col = 0u; col < board.getWidth(); ++col)
+		{
+			if (board.isLegal(col) && board.isWinningMoveUsingCheck(col, turn))
 			{
 				return col;
 			}
@@ -89,7 +95,7 @@ namespace
 			randomCol = static_cast<unsigned>(dist(generator) * board.getWidth());
 		} while (!board.isLegal(randomCol));
 
-		board.playMove(randomCol);
+		board.playMoveAndCheckWin(randomCol);
 	}
 
 	Color simulateGame(ConnectFourBB& board)
@@ -104,7 +110,7 @@ namespace
 			unsigned winningMove = getWinningMove(board, otherTurn(board.getTurn()));
 			if (winningMove != -1u)
 			{
-				board.playMove(winningMove);
+				board.playMoveAndCheckWin(winningMove);
 				continue;
 			}
 
@@ -152,7 +158,7 @@ void ConnectFourNode::populateChildren(const ConnectFourBB& board)
 
 namespace
 {
-	static inline float fasterlog (float x)
+	static inline float fasterlog(float x)
 	{
 		union { float f; uint32_t i; } vx = { x };
 		float y = vx.i;
@@ -187,7 +193,7 @@ void ConnectFourNode::chooseChild(ConnectFourBB& board)
 				if (chosenChildNum-- == 0u)
 				{
 					--numUnexploredChildren;
-					board.playMove(child.lastMove);
+					board.playMoveAndCheckWin(child.lastMove);
 					child.backPropagate(simulateGame(board));
 					return;
 				}
@@ -215,6 +221,6 @@ void ConnectFourNode::chooseChild(ConnectFourBB& board)
 		}
 	}
 
-	board.playMove(bestChild->lastMove);
+	board.playMoveAndCheckWin(bestChild->lastMove);
 	bestChild->chooseChild(board);
 }

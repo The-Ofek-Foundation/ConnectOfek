@@ -11,10 +11,6 @@ namespace game_ai
 {
 	class ConnectFourBB
 	{
-	private:
-		static const unsigned WIDTH = 7u;
-		static const unsigned HEIGHT = 6u;
-
 	public:
 		ConnectFourBB();
 		ConnectFourBB(ConnectFourBB&& board);
@@ -43,6 +39,7 @@ namespace game_ai
 		}
 
 		void playMove(unsigned col);
+		void playMoveAndCheckWin(unsigned col);
 		void removeMove(unsigned col);
 
 		bool gameNotTied() const
@@ -56,6 +53,8 @@ namespace game_ai
 		}
 
 		bool isWinningMove(const unsigned col, const Color color) const;
+		bool isWinningMoveUsingCheck(const unsigned col, const Color color) const;
+		unsigned getWinningCol(const Color color) const;
 
 		Color getColor(unsigned col, unsigned row) const;
 
@@ -68,6 +67,8 @@ namespace game_ai
 		std::vector<unsigned> heights;
 		Color turn;
 		unsigned numMovesLeft;
+		uint64_t redWins, yellowWins;
+		unsigned redWinCol, yellowWinCol;
 
 
 		// to be used by isWinningMove for optimization

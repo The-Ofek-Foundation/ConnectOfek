@@ -10,6 +10,7 @@ using namespace game_ai;
 ConnectFourBB::ConnectFourBB()
 	: redBoard(0uLL), yellowBoard(0uLL),
 	  heights(WIDTH, HEIGHT), turn(Color::RED), numMovesLeft(WIDTH * HEIGHT),
+	  redWins(0uLL), yellowWins(0uLL), redWinCol(-1u), yellowWinCol(-1u),
 	  _maxMovesLeftForWinning(numMovesLeft - 5u)
 {
 }
@@ -17,6 +18,7 @@ ConnectFourBB::ConnectFourBB()
 ConnectFourBB::ConnectFourBB(ConnectFourBB&& board)
 	: redBoard(board.redBoard), yellowBoard(board.yellowBoard),
 	  heights(std::move(board.heights)), turn(board.turn), numMovesLeft(board.numMovesLeft),
+	  redWins(board.redWins), yellowWins(board.yellowWins), redWinCol(board.redWinCol), yellowWinCol(board.yellowWinCol),
 	  _maxMovesLeftForWinning(board._maxMovesLeftForWinning)
 {
 }
@@ -32,6 +34,11 @@ ConnectFourBB& ConnectFourBB::operator = (const ConnectFourBB& that)
 	yellowBoard = that.yellowBoard;
 	turn = that.turn;
 	numMovesLeft = that.numMovesLeft;
+	redWins = that.redWins;
+	yellowWins = that.yellowWins;
+	redWinCol = that.redWinCol;
+	yellowWinCol = that.yellowWinCol;
+
 
 	return *this;
 }
@@ -52,6 +59,135 @@ void ConnectFourBB::playMove(unsigned col)
 	--numMovesLeft;
 }
 
+namespace
+{
+	inline void checkWins(const uint64_t& loc, uint64_t * board, const uint64_t& otherBoard,
+	                      uint64_t * boardWins, const uint64_t& maskLeft, const uint64_t& maskRight,
+	                      const unsigned& step)
+	{
+		unsigned countConsecutive = 1u, afterEmptyLeft = 0u, afterEmptyRight = 0u;
+		bool sawEmpty = false;
+		uint64_t tLoc1 = loc, tLoc2 = loc;
+		uint64_t emptyLeft = 0u, emptyRight = 0u;
+
+		while (maskLeft & tLoc1)
+		{
+			tLoc1 <<= step;
+
+			if (*board & tLoc1) // sweet, our color
+			{
+				if (sawEmpty)
+				{
+					++afterEmptyLeft;
+				}
+				else
+				{
+					++countConsecutive;
+				}
+				continue;
+			}
+
+			if (sawEmpty || otherBoard & tLoc1)
+			{
+				break;
+			}
+
+			sawEmpty = true;
+			emptyLeft = tLoc1;
+		}
+
+		sawEmpty = false;
+
+		while (maskRight & tLoc2)
+		{
+			tLoc2 >>= step;
+
+			if (*board & tLoc2) // sweet, our color
+			{
+				if (sawEmpty)
+				{
+					++afterEmptyRight;
+				}
+				else
+				{
+					++countConsecutive;
+				}
+				continue;
+			}
+
+			if (sawEmpty || otherBoard & tLoc2)
+			{
+				break;
+			}
+
+			sawEmpty = true;
+			emptyRight = tLoc2;
+		}
+
+		if (countConsecutive + afterEmptyLeft >= 3u)
+		{
+			*boardWins |= emptyLeft ? emptyLeft : tLoc1;
+		}
+
+		if (countConsecutive + afterEmptyRight >= 3u)
+		{
+			*boardWins |= emptyRight ? emptyRight : tLoc2;
+		}
+	}
+}
+
+void ConnectFourBB::playMoveAndCheckWin(unsigned col)
+{
+	uint64_t loc, *board, otherBoard, *boardWins;
+
+	--numMovesLeft;
+
+	if (turn == Color::RED)
+	{
+		board = &(redBoard |= (loc = 1uLL << (--heights[col] * WIDTH + col)));
+		turn = Color::YELLOW;
+
+		if (yellowWins & (loc >> VERTICAL_STEP))
+		{
+			yellowWinCol = col;
+			return;
+		}
+
+		boardWins = &redWins;
+		otherBoard = yellowBoard;
+	}
+	else
+	{
+		board = &(yellowBoard |= (loc = 1uLL << (--heights[col] * WIDTH + col)));
+		turn = Color::RED;
+
+		if (redWins & (loc >> VERTICAL_STEP))
+		{
+			redWinCol = col;
+			return;
+		}
+
+		boardWins = &yellowWins;
+		otherBoard = redBoard;
+	}
+
+	unsigned countConsecutive = 1u;
+
+	// check vertical win
+	for (uint64_t tmpLoc = loc; TOP_MASK & tmpLoc && *board & (tmpLoc <<= VERTICAL_STEP); ++countConsecutive);
+
+	if (countConsecutive == 3u)
+	{
+		*boardWins |= loc >> VERTICAL_STEP;
+	}
+
+	checkWins(loc, board, otherBoard, boardWins, LEFT_MASK, RIGHT_MASK, HORIZONTAL_STEP);
+	checkWins(loc, board, otherBoard, boardWins, TOP_LEFT_MASK, BOTTOM_RIGHT_MASK, MAJOR_DIAG_STEP);
+	checkWins(loc, board, otherBoard, boardWins, TOP_RIGHT_MASK, BOTTOM_LEFT_MASK, MINOR_DIAG_STEP);
+
+	// std::cout << std::bitset<64u>(*boardWins) << "\n";
+}
+
 void ConnectFourBB::removeMove(unsigned col)
 {
 	if (turn == Color::RED)
@@ -70,82 +206,58 @@ void ConnectFourBB::removeMove(unsigned col)
 
 bool ConnectFourBB::isWinningMove(const unsigned col, const Color color) const
 {
-	static const uint64_t VERTICAL_STEP   = WIDTH,
-	                      VERTICAL_STEPS  = 3uLL * VERTICAL_STEP,
-	                      VERTICAL_STEPSS = 4uLL * VERTICAL_STEP;
-	static const uint64_t HORIZONTAL_STEP   = 1uLL,
-	                      HORIZONTAL_STEPS  = 4uLL * HORIZONTAL_STEP,
-	                      HORIZONTAL_STEPSS = 5uLL * HORIZONTAL_STEP;
-	static const uint64_t MAJOR_DIAG_STEP    = WIDTH + 1uLL,
-	                      MAJOR_DIAG_STEPS   = 3uLL * MAJOR_DIAG_STEP,
-	                      MAJOR_DIAG_STEPSS  = 4uLL * MAJOR_DIAG_STEP,
-	                      MAJOR_DIAG_STEPSSS = 5uLL * MAJOR_DIAG_STEP;
-	static const uint64_t MINOR_DIAG_STEP    = WIDTH - 1uLL,
-	                      MINOR_DIAG_STEPS   = 3uLL * MINOR_DIAG_STEP,
-	                      MINOR_DIAG_STEPSS  = 4uLL * MINOR_DIAG_STEP,
-	                      MINOR_DIAG_STEPSSS = 5uLL * MINOR_DIAG_STEP;
+	uint64_t board = color == Color::RED ? redBoard : yellowBoard;
+	uint64_t loc = 1uLL << ((heights[col] - 1u) * WIDTH + col), tmpLoc;
 
-	//                                                          654321065432106543210654321065432106543210
-	//                                    0000000000000000000000000100000000000000000000000000000000000000
-	//                                    0000000000000000000000000000000000000000000100000000000000000000
-	//                                    0000000000000000000000000001000000000000000000000000000000000000
-	//                                    0000000000000000000000000000000000000000000000000000000001000000
-	static const uint64_t TOP_MASK =    0b0000000000000000000000000000011111111111111111111111111111111111;
-	static const uint64_t BOTTOM_MASK = 0b0000000000000000000000111111111111111111111111111111111100000000;
-	static const uint64_t LEFT_MASK   = 0b0000000000000000000000011111101111110111111011111101111110111111;
-	static const uint64_t RIGHT_MASK  = 0b0000000000000000000000111111011111101111110111111011111101111110;
-	static const uint64_t TOP_LEFT_MASK = TOP_MASK & LEFT_MASK;
-	static const uint64_t BOTTOM_RIGHT_MASK = BOTTOM_MASK & RIGHT_MASK;
-	static const uint64_t TOP_RIGHT_MASK = TOP_MASK & RIGHT_MASK;
-	static const uint64_t BOTTOM_LEFT_MASK = BOTTOM_MASK & LEFT_MASK;
-
-	uint64_t loc = 1uLL << ((heights[col] - 1u) * WIDTH + col), tmpLoc1, tmpLoc2;
-	uint64_t board = (color == Color::RED ? redBoard : yellowBoard) | loc;
+	unsigned countConsecutive = 1u;
 
 	// check vertical win
-	for (tmpLoc1 = loc; TOP_MASK & tmpLoc1 && board & (tmpLoc1 <<= VERTICAL_STEP););
+	for (tmpLoc = loc; TOP_MASK & tmpLoc && board & (tmpLoc <<= VERTICAL_STEP); countConsecutive <<= 1u);
 
-	if (tmpLoc1 >= loc << VERTICAL_STEPS && (board & tmpLoc1 || tmpLoc1 >= loc << VERTICAL_STEPSS))
+	if (countConsecutive & COUNT_CONSECUTIVE_WIN_MASK)
 	{
 		return true;
 	}
+
+	countConsecutive = 1u;
 
 	// check horizontal win
-	for (tmpLoc1 = loc; LEFT_MASK & tmpLoc1 && board & (tmpLoc1 <<= HORIZONTAL_STEP););
-	for (tmpLoc2 = loc; RIGHT_MASK & tmpLoc2 && board & (tmpLoc2 >>= HORIZONTAL_STEP););
+	for (tmpLoc = loc; LEFT_MASK & tmpLoc && board & (tmpLoc <<= HORIZONTAL_STEP); countConsecutive <<= 1u);
+	for (tmpLoc = loc; RIGHT_MASK & tmpLoc && board & (tmpLoc >>= HORIZONTAL_STEP); countConsecutive <<= 1u);
 
-	if (tmpLoc1 >= tmpLoc2 << HORIZONTAL_STEPS && (board & tmpLoc1 || board & tmpLoc2 || tmpLoc1 >= tmpLoc2 << HORIZONTAL_STEPSS))
+	if (countConsecutive & COUNT_CONSECUTIVE_WIN_MASK)
 	{
 		return true;
 	}
 
+	countConsecutive = 1u;
 
 	// check major (\) diagonal win
-	for (tmpLoc1 = loc; TOP_LEFT_MASK & tmpLoc1 && board & (tmpLoc1 <<= MAJOR_DIAG_STEP););
-	for (tmpLoc2 = loc; BOTTOM_RIGHT_MASK & tmpLoc2 && board & (tmpLoc2 >>= MAJOR_DIAG_STEP););
+	for (tmpLoc = loc; TOP_LEFT_MASK & tmpLoc && board & (tmpLoc <<= MAJOR_DIAG_STEP); countConsecutive <<= 1u);
+	for (tmpLoc = loc; BOTTOM_RIGHT_MASK & tmpLoc && board & (tmpLoc >>= MAJOR_DIAG_STEP); countConsecutive <<= 1u);
 
-	// std::cout << "                      654321065432106543210654321065432106543210\n";
-	// std::cout << std::bitset<64u>(loc) << "\n";
-	// std::cout << std::bitset<64u>(tmpLoc1) << "\n";
-	// std::cout << std::bitset<64u>(tmpLoc2) << "\n";
-
-
-	if (tmpLoc1 >= tmpLoc2 << MAJOR_DIAG_STEPS && (((board & tmpLoc1) && board & tmpLoc2) || (
-	    tmpLoc1 >= tmpLoc2 << MAJOR_DIAG_STEPSS && (board & tmpLoc1 || board & tmpLoc2 ||
-	    tmpLoc1 >= tmpLoc2 << MAJOR_DIAG_STEPSSS))))
+	if (countConsecutive & COUNT_CONSECUTIVE_WIN_MASK)
 	{
 		return true;
 	}
 
+	countConsecutive = 1u;
 
 	// check minor (/) diagonal win
-	for (tmpLoc1 = loc; TOP_RIGHT_MASK & tmpLoc1 && board & (tmpLoc1 <<= MINOR_DIAG_STEP););
-	for (; BOTTOM_LEFT_MASK & loc && board & (loc >>= MINOR_DIAG_STEP););
+	for (tmpLoc = loc; TOP_RIGHT_MASK & tmpLoc && board & (tmpLoc <<= MINOR_DIAG_STEP); countConsecutive <<= 1u);
+	for (; BOTTOM_LEFT_MASK & loc && board & (loc >>= MINOR_DIAG_STEP); countConsecutive <<= 1u);
 
+	return countConsecutive & COUNT_CONSECUTIVE_WIN_MASK;
+}
 
-	return tmpLoc1 >= loc << MINOR_DIAG_STEPS && ((board & tmpLoc1 && board & loc) || (
-	       tmpLoc1 >= loc << MINOR_DIAG_STEPSS && (board & tmpLoc1 || board & loc ||
-	       tmpLoc1 >= loc << MINOR_DIAG_STEPSSS)));
+bool ConnectFourBB::isWinningMoveUsingCheck(const unsigned col, const Color color) const
+{
+	return (color == Color::RED ? redWins : yellowWins) & (1uLL << ((heights[col] - 1u) * WIDTH + col));
+}
+
+unsigned ConnectFourBB::getWinningCol(const Color color) const
+{
+	return color == Color::RED ? redWinCol : yellowWinCol;
 }
 
 Color ConnectFourBB::getColor(unsigned col, unsigned row) const

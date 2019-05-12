@@ -54,6 +54,6 @@ unsigned ConnectFourMcts::runTrials(unsigned numTrials)
 
 void ConnectFourMcts::playMove(unsigned col)
 {
-	board.playMove(col);
-	root.reset();
+	board.playMoveAndCheckWin(col);
+	root.reset(); // TODO: IMPROVE
 }
