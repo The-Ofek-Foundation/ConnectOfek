@@ -6,20 +6,22 @@
 #include <ctime>
 #include <utility>
 
+#include <memory>
+
 using namespace game_ai;
 
 
 ConnectFourMcts::ConnectFourMcts(ConnectFourBB&& b)
-	: board(std::move(b)), tempBoard(), root()
+	: board(std::move(b)), tempBoard(), globalRoot(new ConnectFourNode()), root(globalRoot.get())
 {
 }
 
 unsigned ConnectFourMcts::runTime(unsigned timeInMilliseconds)
 {
-	root.chooseChild(tempBoard = board);
-	if (root.getChildren().size() == 1u)
+	root->chooseChild(tempBoard = board);
+	if (root->getChildren().size() == 1u)
 	{
-		return root.getChildren()[0u].getLastMove();
+		return root->getChildren()[0u].getLastMove();
 	}
 
 
@@ -28,32 +30,33 @@ unsigned ConnectFourMcts::runTime(unsigned timeInMilliseconds)
 	{
 		for (unsigned i = 0u; i < 1000u; ++i)
 		{
-			root.chooseChild(tempBoard = board);
+			root->chooseChild(tempBoard = board);
 		}
 	}
 
-	return root.getBestChild()->getLastMove();
+	return root->getBestChild()->getLastMove();
 }
 
 unsigned ConnectFourMcts::runTrials(unsigned numTrials)
 {
-	root.chooseChild(tempBoard = board);
-	if (root.getChildren().size() == 1u)
+	root->chooseChild(tempBoard = board);
+	if (root->getChildren().size() == 1u)
 	{
-		return root.getChildren()[0u].getLastMove();
+		return root->getChildren()[0u].getLastMove();
 	}
 
 
 	for (unsigned i = 0u; i < numTrials; ++i)
 	{
-		root.chooseChild(tempBoard = board);
+		root->chooseChild(tempBoard = board);
 	}
 
-	return root.getBestChild()->getLastMove();
+	return root->getBestChild()->getLastMove();
 }
 
 void ConnectFourMcts::playMove(unsigned col)
 {
+	root->chooseChild(tempBoard = board);
 	board.playMoveAndCheckWin(col);
-	root.reset(); // TODO: IMPROVE
+	root = root->getChild(col);
 }

@@ -8,6 +8,7 @@
 #include <cstdio>
 
 #include <ctime>
+#include <locale.h>
 
 using namespace game_ai;
 
@@ -15,23 +16,28 @@ using namespace game_ai;
 void playGame(Color aiTurn)
 {
 	ConnectFourMcts cfm{ConnectFourBB()};
-	cfm.runTrials(1000000u); return;
+	// cfm.runTrials(6000000u); return;
 	unsigned col;
 
 	while (cfm.getBoard().gameNotTied())
 	{
-		std::clock_t startTime = std::clock();
-		// cfm.runTrials(1000000u);
-		cfm.runTime(1000u);
-		std::cout << (std::clock() - startTime) * 1.0 / CLOCKS_PER_SEC << std::endl;
-		const ConnectFourNode* bestChild = cfm.getNode().getBestChild();
+		std::cout << cfm.getBoard() << std::endl;
 
-		printf("The AI thinks that %d is the best move, after %d trials.\n\n",
-			bestChild->getLastMove(), cfm.getNode().getTotalTrials());
+		if (cfm.getBoard().getTurn() == aiTurn)
+		{
+			// cfm.runTrials(1000000u);
+			cfm.runTime(30000u);
+			const ConnectFourNode* bestChild = cfm.getNode().getBestChild();
 
+			printf("\nThe AI thinks that %d is the best move, after %'d trials.\n\n",
+				col = bestChild->getLastMove(), cfm.getNode().getTotalTrials());
+		}
+		else
+		{
+			std::cout << "\nYour Move: ";
+			std::cin >> col;
+		}
 
-		std::cout << cfm.getBoard() << "\nYour Move: ";
-		std::cin >> col;
 
 		if (cfm.getBoard().isWinningMoveUsingCheck(col, cfm.getBoard().getTurn()))
 		{
@@ -42,13 +48,14 @@ void playGame(Color aiTurn)
 		cfm.playMove(col);
 	}
 
-	std::cout << "Game Over!\n" << cfm.getBoard() << "\n";
+	std::cout << "Game Over!\n\n" << cfm.getBoard() << "\n";
 }
 
 
 int main()
 {
-	playGame(Color::EMPTY); return 0;
+	setlocale(LC_NUMERIC, "");
+	playGame(Color::YELLOW); return 0;
 
 	ConnectFourBB cfb;
 

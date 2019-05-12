@@ -22,6 +22,7 @@ namespace game_ai
 
 
 		void chooseChild(ConnectFourBB& board);
+		ConnectFourNode* getChild(unsigned lastMove);
 
 		unsigned getTotalTrials() const
 		{

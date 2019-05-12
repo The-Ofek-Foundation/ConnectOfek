@@ -4,6 +4,7 @@
 #include "ConnectFourBB.hxx"
 #include "ConnectFourNode.hxx"
 
+#include <memory>
 
 namespace game_ai
 {
@@ -25,12 +26,13 @@ namespace game_ai
 
 		const ConnectFourNode& getNode() const
 		{
-			return root;
+			return *root;
 		}
 
 	private:
 		ConnectFourBB board, tempBoard;
-		ConnectFourNode root;
+		std::unique_ptr<ConnectFourNode> globalRoot;
+		ConnectFourNode* root;
 	};
 }
 

@@ -16,6 +16,7 @@ ConnectFourNode::ConnectFourNode(unsigned lastMove, ConnectFourNode* parent, Col
 {
 }
 
+
 void ConnectFourNode::reset()
 {
 	lastMove = -1u;
@@ -41,6 +42,19 @@ const ConnectFourNode* ConnectFourNode::getBestChild() const
 	}
 
 	return bestChild;
+}
+
+ConnectFourNode* ConnectFourNode::getChild(unsigned lastMove)
+{
+	for (ConnectFourNode& child : children)
+	{
+		if (child.lastMove == lastMove)
+		{
+			return &child;
+		}
+	}
+
+	return nullptr;
 }
 
 void ConnectFourNode::backPropagate(Color result)
