@@ -1,6 +1,6 @@
 var docWidth, docHeight;
 var discWidth, discHeight;
-var board, _boardCopy;
+var board;
 var redTurnGlobal;
 var globalRoot;
 var expansionConstant;
@@ -23,6 +23,27 @@ var aiIdGlobal = 0; // prevents multiple Mcts recursive functions simultaneously
 
 var winHelperGlobal = new Array(4);
 var board2dGlobal;
+var piecesGlobal, winsGlobal, tempPieces, tempB2d, tempWins;
+
+function initBitboardState() {
+	var width = dimensions[0], height = dimensions[1];
+	board2dGlobal = new Array(width);
+	piecesGlobal = new Int32Array(width);
+	winsGlobal = new Int32Array(width);
+	tempPieces = new Int32Array(width);
+	tempB2d = new Int32Array(width);
+	tempWins = new Int32Array(width);
+	for (var i = 0; i < width; i++)
+		board2dGlobal[i] = height - 1;
+}
+
+function resetTempState() {
+	for (var i = 0; i < dimensions[0]; i++) {
+		tempPieces[i] = piecesGlobal[i];
+		tempB2d[i] = board2dGlobal[i];
+		tempWins[i] = winsGlobal[i];
+	}
+}
 
 function pageReady() {
 	resizeBoard();
@@ -60,7 +81,8 @@ function startPonder() {
 		var startTime = new Date().getTime();
 		var tempCount = 0;
 		while ((new Date().getTime() - startTime) < 30 && !stopChoose) {
-			globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
+			resetTempState();
+			globalRoot.chooseChild(tempPieces, tempB2d, tempWins);
 			tempCount++;
 		}
 		if (numChoose3 && globalRoot.totalTries > 2e6 && (tempCount < numChoose3 / 5 || tempCount < numChoose2 / 5 || tempCount < numChoose1 / 5))
@@ -134,17 +156,13 @@ function newGame(cId) {
 
 	over = -1;
 	board = new Array(dimensions[0]);
-	_boardCopy = new Array(dimensions[0]);
 	for (var i = 0; i < board.length; i++) {
 		board[i] = new Array(dimensions[1]);
-		_boardCopy[i] = new Array(dimensions[1]);
 		for (var a = 0; a < board[i].length; a++)
 			board[i][a] = 0;
 	}
 
-	board2dGlobal = new Array(board.length);
-	for (var i = 0; i < board2dGlobal.length; i++)
-		board2dGlobal[i] = dimensions[1] - 1;
+	initBitboardState();
 
 	winHelperGlobal = initWinHelper();
 
@@ -178,17 +196,13 @@ function newGameCookie(cookie) {
 	adjustButtons();
 
 	board = new Array(dimensions[0]);
-	_boardCopy = new Array(dimensions[0]);
 	for (var i = 0; i < board.length; i++) {
 		board[i] = new Array(dimensions[1]);
-		_boardCopy[i] = new Array(dimensions[1]);
 		for (var a = 0; a < board[i].length; a++)
 			board[i][a] = 0;
 	}
 
-	board2dGlobal = new Array(board.length);
-	for (var i = 0; i < board2dGlobal.length; i++)
-		board2dGlobal[i] = dimensions[1] - 1;
+	initBitboardState();
 
 	winHelperGlobal = initWinHelper();
 
@@ -296,8 +310,8 @@ function setupPosition(pos) {
 	for (var i = 0; i < pos.length; i++) {
 		var col = parseInt(pos.charAt(i), 10) - 1;
 		if (legalMove(board, col, false)) {
-			playMove(board, col, redTurnGlobal);
-			board2dGlobal[col]--;
+			playMoveGlobal(board, col, redTurnGlobal,
+				winHelperGlobal, board2dGlobal);
 			redTurnGlobal = !redTurnGlobal;
 		} else return false;
 	}
@@ -654,10 +668,141 @@ function playMove(tboard, col, turn) {
 	return row;
 }
 
+// Bitwise board and incremental threat-tracking ported from cppsource/ConnectFourBB.cxx:
+// In pieces[col] and wins[col], bits 0..15 represent Red (1 << row) and bits 16..31
+// represent Yellow (65536 << row).
+function checkHorizontalWins(pieces, wins, width, col, row, bit) {
+	var bitRow = bit << row, anyRow = 65537 << row;
+	var countConsecutive = 1, afterEmptyLeft = 0, afterEmptyRight = 0;
+	var emptyLeftCol = -1, emptyRightCol = -1;
+	var sawEmpty = false;
+	var c = col - 1;
+
+	while (c >= 0) {
+		var colBits = pieces[c];
+		if (colBits & bitRow) {
+			if (sawEmpty)
+				afterEmptyLeft++;
+			else
+				countConsecutive++;
+		} else if (sawEmpty || (colBits & anyRow)) {
+			break;
+		} else {
+			sawEmpty = true;
+			emptyLeftCol = c;
+		}
+		c--;
+	}
+
+	sawEmpty = false;
+	c = col + 1;
+	while (c < width) {
+		var colBits = pieces[c];
+		if (colBits & bitRow) {
+			if (sawEmpty)
+				afterEmptyRight++;
+			else
+				countConsecutive++;
+		} else if (sawEmpty || (colBits & anyRow)) {
+			break;
+		} else {
+			sawEmpty = true;
+			emptyRightCol = c;
+		}
+		c++;
+	}
+
+	if (emptyLeftCol !== -1 && countConsecutive + afterEmptyLeft >= 3)
+		wins[emptyLeftCol] |= bitRow;
+	if (emptyRightCol !== -1 && countConsecutive + afterEmptyRight >= 3)
+		wins[emptyRightCol] |= bitRow;
+}
+
+function checkDiagWins(pieces, wins, width, height, col, row, bit, dRow) {
+	var countConsecutive = 1, afterEmptyLeft = 0, afterEmptyRight = 0;
+	var emptyLeftCol = -1, emptyLeftRow = -1, emptyRightCol = -1, emptyRightRow = -1;
+	var sawEmpty = false;
+	var c = col - 1, r = row - dRow;
+
+	while (c >= 0 && r >= 0 && r < height) {
+		var colBits = pieces[c];
+		if (colBits & (bit << r)) {
+			if (sawEmpty)
+				afterEmptyLeft++;
+			else
+				countConsecutive++;
+		} else if (sawEmpty || (colBits & (65537 << r))) {
+			break;
+		} else {
+			sawEmpty = true;
+			emptyLeftCol = c;
+			emptyLeftRow = r;
+		}
+		c--;
+		r -= dRow;
+	}
+
+	sawEmpty = false;
+	c = col + 1;
+	r = row + dRow;
+
+	while (c < width && r >= 0 && r < height) {
+		var colBits = pieces[c];
+		if (colBits & (bit << r)) {
+			if (sawEmpty)
+				afterEmptyRight++;
+			else
+				countConsecutive++;
+		} else if (sawEmpty || (colBits & (65537 << r))) {
+			break;
+		} else {
+			sawEmpty = true;
+			emptyRightCol = c;
+			emptyRightRow = r;
+		}
+		c++;
+		r += dRow;
+	}
+
+	if (emptyLeftCol !== -1 && countConsecutive + afterEmptyLeft >= 3)
+		wins[emptyLeftCol] |= bit << emptyLeftRow;
+	if (emptyRightCol !== -1 && countConsecutive + afterEmptyRight >= 3)
+		wins[emptyRightCol] |= bit << emptyRightRow;
+}
+
+function playMoveAndCheckWin(pieces, b2d, wins, col, turn) {
+	var row = b2d[col]--;
+	var bit = turn ? 1 : 65536;
+	var colPieces = (pieces[col] |= bit << row);
+
+	var vertMask = (bit * 6) << row;
+	if (row > 0 && (colPieces & vertMask) === vertMask)
+		wins[col] |= bit << (row - 1);
+
+	var width = dimensions[0], height = dimensions[1];
+	checkHorizontalWins(pieces, wins, width, col, row, bit);
+	checkDiagWins(pieces, wins, width, height, col, row, bit, 1);
+	checkDiagWins(pieces, wins, width, height, col, row, bit, -1);
+}
+
+function piecesToBoard(pieces) {
+	var width = dimensions[0], height = dimensions[1];
+	var b = new Array(width);
+	for (var c = 0; c < width; c++) {
+		b[c] = new Array(height);
+		var colBits = pieces[c];
+		for (var r = 0; r < height; r++)
+			b[c][r] = (colBits & (1 << r)) ? 1 : ((colBits & (65536 << r)) ? 2 : 0);
+	}
+	return b;
+}
+
 function playMoveGlobal(tboard, col, turn, winHelper, b2d) {
 	var color = turn ? 1:2;
-	tboard[col][b2d[col]] = color;
-	return updateWinHelper(winHelper, b2d[col]--, col, color);
+	var row = b2d[col];
+	tboard[col][row] = color;
+	playMoveAndCheckWin(piecesGlobal, b2d, winsGlobal, col, turn);
+	return updateWinHelper(winHelper, row, col, color);
 }
 
 boardui.addEventListener('mousedown', function (e) {
@@ -689,35 +834,37 @@ boardui.addEventListener('mousemove', function (e) {
 	drawHover(col);
 });
 
-function getWinningMove(tboard, b2d, turn) {
-	for (var col = 0; col < tboard.length; col++) {
-		if (b2d[col] === -1)
-			continue;
-		if (gameOverColor(tboard, col, b2d[col], turn ? 1:2) !== -1)
+function getWinningMove(b2d, turn, wins) {
+	var bit = turn ? 1 : 65536;
+	for (var col = 0; col < b2d.length; col++) {
+		var r = b2d[col];
+		if (r !== -1 && (wins[col] & (bit << r)))
 			return col;
 	}
 	return -1;
 }
 
-function cGetWinningMove(tboard, b2d, turn) {
-	var color = turn ? 1:2, c = 0;
-	for (var col = 0; col < tboard.length; col++) {
-		if (b2d[col] === -1)
+function cGetWinningMove(b2d, turn, wins) {
+	var bit = turn ? 1 : 65536, c = 0;
+	for (var col = 0; col < b2d.length; col++) {
+		var r = b2d[col];
+		if (r === -1)
 			continue;
 		c++;
-		if (gameOverColor(tboard, col, b2d[col], color) != -1)
-			return [col, b2d[col]];
+		if (wins[col] & (bit << r))
+			return [col, r];
 	}
 	return [false, c];
 }
-function aGetWinningMove(tboard, b2d, turn, c) {
-	var color = turn ? 1:2, a = new Array(c);
-	for (var col = 0; col < tboard.length; col++) {
-		if (b2d[col] === -1)
+function aGetWinningMove(b2d, turn, c, wins) {
+	var bit = turn ? 1 : 65536, a = new Array(c);
+	for (var col = 0; col < b2d.length; col++) {
+		var r = b2d[col];
+		if (r === -1)
 			continue;
 		a[--c] = col + 1;
-		if (gameOverColor(tboard, col, b2d[col], color) != -1)
-			return [col, b2d[col]];
+		if (wins[col] & (bit << r))
+			return [col, r];
 	}
 	return [false, a];
 }
@@ -736,18 +883,18 @@ function gameMiddle(b2d) {
 	return true;
 }
 
-function MctsGetChildren(father, tboard, b2d) {
+function MctsGetChildren(father, pieces, b2d, wins) {
 
 	// win[1] stores all possible moves
 
-	var win = cGetWinningMove(tboard, b2d, father.turn);
+	var win = cGetWinningMove(b2d, father.turn, wins);
 	if (win[1] === 0) { // Game tied
 		father.gameOver = -2;
 		return [];
 	}
 
 	if (win[0] === false)
-		win = aGetWinningMove(tboard, b2d, !father.turn, win[1]);
+		win = aGetWinningMove(b2d, !father.turn, win[1], wins);
 	else {
 		father.gameOver = win[0];
 		return [];
@@ -789,27 +936,36 @@ function ib (b1, b2) {
 
 var MctsSimulate;
 
-function MctsDumbSimulate(father, tboard, b2d, gTurn) {
-	var lastMove, turn = gTurn, done = false;
-	var row, col;
-	while (done == -1) {
-			do {
-				col = Math.random() * tboard.length | 0;
-				row = playMove(tboard, col, turn);
-			}	while (row === -1);
-		done = gameOver(tboard, col, row);
+function MctsDumbSimulate(father, pieces, b2d, gTurn, wins) {
+	var turn = gTurn, len = b2d.length, col;
+	var colsLeft = 0;
+	for (var i = 0; i < len; i++)
+		if (b2d[i] !== -1)
+			colsLeft++;
+	if (colsLeft === 0)
+		return 0;
+
+	while (true) {
+		do {
+			col = Math.random() * len | 0;
+		} while (b2d[col] === -1);
+
+		if (wins[col] & ((turn ? 1 : 65536) << b2d[col]))
+			return turn === gTurn ? 1 : -1;
+
+		playMoveAndCheckWin(pieces, b2d, wins, col, turn);
+
+		if (b2d[col] === -1 && --colsLeft === 0)
+			return 0;
+
 		turn = !turn;
 	}
-
-	if (done === 0)
-		return 0;
-	return done == (gTurn ? 1:2) ? 1:-1;
 }
 
-function MctsSimulateSmart(father, tboard, b2d, gTurn) {
+function MctsSimulateSmart(father, pieces, b2d, gTurn, wins) {
 
 	if (mlmode && dimensions[0] === 7 && dimensions[1] === 6) {
-		var mlresult = mlstates.getResult(tboard);
+		var mlresult = mlstates.getResult(piecesToBoard(pieces));
 
 		if (mlresult != -1)
 			if (mlresult === 0)
@@ -819,10 +975,10 @@ function MctsSimulateSmart(father, tboard, b2d, gTurn) {
 
 
 	var turn = gTurn, done = -1;
-	var row, col;
+	var row, col, len = b2d.length;
 
 	var colsLeft = 0;
-	for (var i = 0; i < b2d.length; i++)
+	for (var i = 0; i < len; i++)
 		if (b2d[i] !== -1)
 			colsLeft++;
 	if (colsLeft === 0) {
@@ -831,9 +987,9 @@ function MctsSimulateSmart(father, tboard, b2d, gTurn) {
 	}
 
 	while (done === -1) {
-		col = getWinningMove(tboard, b2d, turn);
+		col = getWinningMove(b2d, turn, wins);
 		if (col === -1)
-			col = getWinningMove(tboard, b2d, !turn);
+			col = getWinningMove(b2d, !turn, wins);
 		else {
 			done = turn ? 1:2;
 			break;
@@ -841,11 +997,16 @@ function MctsSimulateSmart(father, tboard, b2d, gTurn) {
 
 		if (col === -1)
 			do {
-				col = Math.random() * tboard.length | 0;
+				col = Math.random() * len | 0;
 			}	while (b2d[col] === -1);
 
-		tboard[col][b2d[col]] = turn ? 1:2;
-		b2d[col]--;
+		row = b2d[col];
+		if (row > 0 && (wins[col] & ((turn ? 65536 : 1) << (row - 1)))) {
+			done = !turn ? 1:2;
+			break;
+		}
+
+		playMoveAndCheckWin(pieces, b2d, wins, col, turn);
 
 		if (b2d[col] === -1) {
 			colsLeft--;
@@ -886,10 +1047,13 @@ function runMctsRecursive(times, threshold, callback, count, aiId) {
 	var startTime = new Date().getTime();
 	var initTimes = times;
 	if (times === 0 && globalRoot.totalTries < 5E3)
-		while (globalRoot.totalTries < 5E3)
-			globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
+		while (globalRoot.totalTries < 5E3) {
+			resetTempState();
+			globalRoot.chooseChild(tempPieces, tempB2d, tempWins);
+		}
 	while (times > 0 && (new Date().getTime() - startTime) < 100) {
-		globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
+		resetTempState();
+		globalRoot.chooseChild(tempPieces, tempB2d, tempWins);
 		times--;
 	}
 	if (count % 20 === 0) {
@@ -1050,8 +1214,7 @@ function gameOverColor(tboard, x, y, color) {
 
 	countConsecutive = 1;
 
-	// ??? there's nothing there XD
-	// for (a = y - 1; a >= 0 && countConsecutive < 4 && tboard[x][a] == color; a--, countConsecutive++);
+	for (a = y - 1; a >= 0 && countConsecutive < 4 && tboard[x][a] == color; a--, countConsecutive++);
 	for (a = y + 1; a < tboard[0].length && countConsecutive < 4 && tboard[x][a] == color; a++, countConsecutive++);
 
 	if (countConsecutive == 4)
@@ -1444,12 +1607,17 @@ class MctsNode {
 		this.gameOver = -1;
 	}
 
-	chooseChild(tboard, b2d) {
+	chooseChild(pieces, b2d, wins) {
+		if (wins === undefined) {
+			resetTempState();
+			pieces = tempPieces;
+			b2d = tempB2d;
+			wins = tempWins;
+		}
 		if (this.lastMove !== -1)
-			tboard[this.lastMove][b2d[this.lastMove]--]
-				= !this.turn ? 1:2;
+			playMoveAndCheckWin(pieces, b2d, wins, this.lastMove, !this.turn);
 		if (typeof this.children === 'undefined') {
-			this.children = MctsGetChildren(this, tboard, b2d);
+			this.children = MctsGetChildren(this, pieces, b2d, wins);
 			if (typeof this.children !== 'undefined')
 				this.countUnexplored = this.children.length;
 		}
@@ -1464,9 +1632,8 @@ class MctsNode {
 				for (i = 0; i < this.children.length; i++)
 					if (this.children[i].totalTries === 0) {
 						if (ran === 0) {
-							tboard[this.children[i].lastMove][b2d[this.children[i].lastMove]--]
-								= this.turn ? 1:2;
-							this.children[i].runSimulation(tboard, b2d);
+							playMoveAndCheckWin(pieces, b2d, wins, this.children[i].lastMove, this.turn);
+							this.children[i].runSimulation(pieces, b2d, wins);
 							return;
 						}
 						ran--;
@@ -1481,13 +1648,13 @@ class MctsNode {
 						bestChild = this.children[i];
 					}
 				}
-				bestChild.chooseChild(tboard, b2d);
+				bestChild.chooseChild(pieces, b2d, wins);
 			}
 		}
 	}
 
-	runSimulation(tboard, b2d) {
-		this.backPropogate(MctsSimulate(this, tboard, b2d, this.turn));
+	runSimulation(pieces, b2d, wins) {
+		this.backPropogate(MctsSimulate(this, pieces, b2d, this.turn, wins));
 	}
 
 	backPropogate(simulation) {
@@ -1512,12 +1679,16 @@ function MctsChildPotential(child, lt) {
 function efficiencyTest() {
 	globalRoot = createMctsRoot();
 	var totalTrials, start = new Date().getTime();
-	for (totalTrials = 0; totalTrials < 100000; totalTrials++)
-		globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
+	for (totalTrials = 0; totalTrials < 100000; totalTrials++) {
+		resetTempState();
+		globalRoot.chooseChild(tempPieces, tempB2d, tempWins);
+	}
 	console.log((new Date().getTime() - start) / 1E3);
 	setInterval(function() {
-		for (var i = 0; i < 1000; i++)
-			globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
+		for (var i = 0; i < 1000; i++) {
+			resetTempState();
+			globalRoot.chooseChild(tempPieces, tempB2d, tempWins);
+		}
 		numTrialsElem.innerHTML = globalRoot.totalTries;
 	}, 1);
 }
@@ -1526,8 +1697,10 @@ function speedTest(totalTrials) {
 	totalTrials = totalTrials || 5E5;
 	globalRoot = createMctsRoot();
 	let startTime = new Date().getTime();
-	while (globalRoot.totalTries < totalTrials)
-		globalRoot.chooseChild(boardCopy(board), board2dCopy(board2dGlobal));
+	while (globalRoot.totalTries < totalTrials) {
+		resetTempState();
+		globalRoot.chooseChild(tempPieces, tempB2d, tempWins);
+	}
 	let elapsedTime = (new Date().getTime() - startTime) / 1E3;
 	console.log(numberWithCommas(Math.round(globalRoot.totalTries / elapsedTime)) + ' simulations per second.');
 }
@@ -1537,10 +1710,8 @@ function testExpansionConstants(c1, c2, numTrials, nT, output) {
 	for (var I = 0; I < numTrials; I++) {
 		over = -1;
 		board = new Array(dimensions[0]);
-		_boardCopy = new Array(dimensions[0]);
 		for (var i = 0; i < board.length; i++) {
 			board[i] = new Array(dimensions[1]);
-			_boardCopy[i] = new Array(dimensions[1]);
 			for (var a = 0; a < board[i].length; a++)
 				board[i][a] = 0;
 		}
@@ -1661,10 +1832,13 @@ function board2dCopy(b2d) {
 }
 
 function boardCopy(tboard) {
-	for (var i = 0; i < tboard.length; i++)
+	var newBoard = new Array(tboard.length);
+	for (var i = 0; i < tboard.length; i++) {
+		newBoard[i] = new Array(tboard[i].length);
 		for (var a = 0; a < tboard[i].length; a++)
-			_boardCopy[i][a] = tboard[i][a];
-	return _boardCopy;
+			newBoard[i][a] = tboard[i][a];
+	}
+	return newBoard;
 }
 
 function showMlInfoModal() {
